@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   ListTodo, 
-  PlusCircle, 
-  Settings,
+  PlusCircle,
   ChevronLeft,
   ChevronRight,
-  FileText,
-  Layers
+  Layers,
+  LogOut,
+  User
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NavItem {
   label: string;
@@ -27,6 +28,7 @@ const navItems: NavItem[] = [
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   return (
     <aside 
@@ -75,8 +77,38 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="p-3 border-t border-sidebar-border">
+      {/* User & Footer */}
+      <div className="p-3 border-t border-sidebar-border space-y-2">
+        {/* User info */}
+        {user && (
+          <div className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-lg bg-sidebar-accent/50",
+            collapsed && "justify-center"
+          )}>
+            <div className="w-8 h-8 rounded-full bg-sidebar-ring/20 flex items-center justify-center shrink-0">
+              <User className="w-4 h-4 text-sidebar-ring" />
+            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0 animate-fade-in">
+                <p className="text-xs text-sidebar-foreground truncate">{user.email}</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Logout */}
+        <button
+          onClick={signOut}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors",
+            collapsed && "justify-center"
+          )}
+        >
+          <LogOut className="w-5 h-5" />
+          {!collapsed && <span className="text-sm">Sair</span>}
+        </button>
+
+        {/* Collapse button */}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"

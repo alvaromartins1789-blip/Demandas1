@@ -29,7 +29,9 @@ export interface Demanda {
   dataCriacao: Date;
   dataAtualizacao: Date;
   solicitante: string;
+  solicitanteId?: string;
   responsavelTecnico?: string;
+  responsavelTecnicoId?: string;
   
   // Triagem
   statusTriagem?: 'aprovado' | 'reprovado' | 'pendente';

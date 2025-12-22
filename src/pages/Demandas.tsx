@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { DemandaCard } from '@/components/dashboard/DemandaCard';
-import { mockDemandas } from '@/data/mockDemandas';
+import { useDemandas } from '@/hooks/useDemandas';
 import { StatusDemanda, statusLabels, Prioridade, prioridadeLabels, Categoria, categoriaLabels } from '@/types/demanda';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, X, Plus, LayoutGrid, List } from 'lucide-react';
+import { Search, Filter, X, Plus, LayoutGrid, List, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -25,8 +25,10 @@ export default function Demandas() {
   const [categoriaFilter, setCategoriaFilter] = useState<Categoria | 'all'>('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  const { data: demandas = [], isLoading } = useDemandas();
+
   const filteredDemandas = useMemo(() => {
-    return mockDemandas.filter(demanda => {
+    return demandas.filter(demanda => {
       const matchesSearch = search === '' || 
         demanda.nomeProjeto.toLowerCase().includes(search.toLowerCase()) ||
         demanda.descricao.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,7 +40,7 @@ export default function Demandas() {
 
       return matchesSearch && matchesStatus && matchesPrioridade && matchesCategoria;
     });
-  }, [search, statusFilter, prioridadeFilter, categoriaFilter]);
+  }, [demandas, search, statusFilter, prioridadeFilter, categoriaFilter]);
 
   const hasFilters = statusFilter !== 'all' || prioridadeFilter !== 'all' || categoriaFilter !== 'all' || search !== '';
 
@@ -56,6 +58,16 @@ export default function Demandas() {
       year: 'numeric',
     }).format(date);
   };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -222,13 +234,19 @@ export default function Demandas() {
 
         {filteredDemandas.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhuma demanda encontrada.</p>
-            <button
-              onClick={clearFilters}
-              className="mt-2 text-sm text-primary hover:underline"
-            >
-              Limpar filtros
-            </button>
+            <p className="text-muted-foreground">
+              {hasFilters 
+                ? 'Nenhuma demanda encontrada.' 
+                : 'Nenhuma demanda cadastrada ainda.'}
+            </p>
+            {hasFilters && (
+              <button
+                onClick={clearFilters}
+                className="mt-2 text-sm text-primary hover:underline"
+              >
+                Limpar filtros
+              </button>
+            )}
           </div>
         )}
       </div>
