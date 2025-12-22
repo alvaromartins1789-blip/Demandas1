@@ -290,6 +290,7 @@ export type Database = {
         Args: { _setor_id: string; _user_id: string }
         Returns: boolean
       }
+      is_user_active: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "super_admin" | "admin_setor" | "usuario"
