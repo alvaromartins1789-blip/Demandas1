@@ -132,38 +132,164 @@ export type Database = {
       profiles: {
         Row: {
           area: string | null
+          ativo: boolean
           created_at: string
           email: string
+          id: string
+          nome: string
+          setor_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          ativo?: boolean
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+          setor_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          ativo?: boolean
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          setor_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      setores: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          descricao: string | null
           id: string
           nome: string
           updated_at: string
         }
         Insert: {
-          area?: string | null
+          ativo?: boolean
           created_at?: string
-          email: string
-          id: string
+          descricao?: string | null
+          id?: string
           nome: string
           updated_at?: string
         }
         Update: {
-          area?: string | null
+          ativo?: boolean
           created_at?: string
-          email?: string
+          descricao?: string | null
           id?: string
           nome?: string
           updated_at?: string
         }
         Relationships: []
       }
+      user_invites: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          setor_id: string | null
+          used_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          invited_by: string
+          role: Database["public"]["Enums"]["app_role"]
+          setor_id?: string | null
+          used_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          setor_id?: string | null
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_invites_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          setor_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          setor_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          setor_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_setor_id: { Args: { _user_id: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_setor_admin: {
+        Args: { _setor_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "super_admin" | "admin_setor" | "usuario"
       categoria: "aplicativo" | "automacao" | "dashboard"
       prioridade: "baixa" | "media" | "alta" | "urgente"
       status_aprovacao: "pendente" | "aprovado" | "reprovado"
@@ -304,6 +430,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["super_admin", "admin_setor", "usuario"],
       categoria: ["aplicativo", "automacao", "dashboard"],
       prioridade: ["baixa", "media", "alta", "urgente"],
       status_aprovacao: ["pendente", "aprovado", "reprovado"],
