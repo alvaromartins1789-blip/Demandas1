@@ -31,35 +31,86 @@ export default function ResetPassword() {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if there's a valid recovery session
+    // Check URL for error parameters (expired/invalid token)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const searchParams = new URLSearchParams(window.location.search);
+    
+    const errorCode = hashParams.get('error_code') || searchParams.get('error_code');
+    const errorDescription = hashParams.get('error_description') || searchParams.get('error_description');
+    
+    if (errorCode || errorDescription) {
+      console.log('[ResetPassword] Token error detected:', { errorCode, errorDescription });
+      setIsValidToken(false);
+      return;
+    }
+
+    // Check for access_token in URL hash (indicates valid recovery link)
+    const accessToken = hashParams.get('access_token');
+    const tokenType = hashParams.get('type');
+    
+    console.log('[ResetPassword] URL params:', { 
+      hasAccessToken: !!accessToken, 
+      tokenType,
+      hash: window.location.hash.substring(0, 50) + '...'
+    });
+
+    let subscriptionRef: { unsubscribe: () => void } | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
+
     const checkSession = async () => {
+      // First check if there's already a valid session
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (session) {
+        console.log('[ResetPassword] Valid session found');
         setIsValidToken(true);
-      } else {
-        // Listen for auth state changes (token from URL)
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, session) => {
-            if (event === 'PASSWORD_RECOVERY') {
-              setIsValidToken(true);
-            } else if (session) {
-              setIsValidToken(true);
-            }
-          }
-        );
-
-        // Wait a bit for the auth state to update
-        setTimeout(() => {
-          if (isValidToken === null) {
-            setIsValidToken(false);
-          }
-        }, 2000);
-
-        return () => subscription.unsubscribe();
+        return;
       }
+
+      // Listen for auth state changes
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(
+        (event, session) => {
+          console.log('[ResetPassword] Auth event:', event, !!session);
+          
+          if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') {
+            if (timeoutId) clearTimeout(timeoutId);
+            setIsValidToken(true);
+          }
+        }
+      );
+      
+      subscriptionRef = subscription;
+
+      // Only set invalid after timeout if we don't have an access_token in URL
+      // This gives Supabase time to process the token
+      timeoutId = setTimeout(() => {
+        // Re-check session before marking as invalid
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            console.log('[ResetPassword] Session found after wait');
+            setIsValidToken(true);
+          } else if (!accessToken) {
+            console.log('[ResetPassword] No session and no token in URL');
+            setIsValidToken(false);
+          } else {
+            // Has token but no session yet - give it more time
+            console.log('[ResetPassword] Has token, waiting for processing...');
+            setTimeout(() => {
+              supabase.auth.getSession().then(({ data: { session } }) => {
+                setIsValidToken(!!session);
+              });
+            }, 2000);
+          }
+        });
+      }, 1500);
     };
 
     checkSession();
+
+    return () => {
+      if (subscriptionRef) subscriptionRef.unsubscribe();
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
