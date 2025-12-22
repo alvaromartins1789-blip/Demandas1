@@ -134,49 +134,62 @@ Inclua:
         throw new Error('Tipo de análise não suportado');
     }
 
-    // Build the API URL - check if it already ends with the path
-    let apiUrl = CUSTOM_LLM_URL;
-    if (!apiUrl.endsWith('/chat/completions') && !apiUrl.endsWith('/v1/chat/completions')) {
-      apiUrl = apiUrl.endsWith('/') ? `${apiUrl}chat/completions` : `${apiUrl}/chat/completions`;
-    }
-
-    console.log('Sending request to LLM API:', apiUrl);
+    // Build the API URL for Groq
+    const apiUrl = `${CUSTOM_LLM_URL}/chat/completions`;
+    console.log('Sending request to Groq API:', apiUrl);
     
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${CUSTOM_LLM_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('LLM API error:', response.status, errorText);
-      throw new Error(`Erro na API LLM: ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('LLM response received successfully');
+    // Create AbortController for 30 second timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     
-    const aiResponse = result.choices?.[0]?.message?.content || 'Não foi possível gerar uma resposta.';
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${CUSTOM_LLM_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      response: aiResponse,
-      type 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Groq API error:', response.status, errorText);
+        throw new Error(`Erro na API Groq: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Groq response received successfully');
+      
+      const aiResponse = result.choices?.[0]?.message?.content || 'Não foi possível gerar uma resposta.';
+
+      return new Response(JSON.stringify({ 
+        success: true,
+        response: aiResponse,
+        type 
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+      
+    } catch (fetchError: unknown) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('Request timeout after 30 seconds');
+        throw new Error('Timeout: A requisição demorou mais de 30 segundos');
+      }
+      throw fetchError;
+    }
 
   } catch (error) {
     console.error('AI Assistant error:', error);
