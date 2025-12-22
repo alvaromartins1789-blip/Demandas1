@@ -40,35 +40,46 @@ function mapDbToClient(row: DbDemanda): Demanda {
 }
 
 export async function fetchDemandas(): Promise<Demanda[]> {
-  const { data, error } = await supabase
+  // Fetch demandas first
+  const { data: demandas, error: demandasError } = await supabase
     .from('demandas')
-    .select(`
-      *,
-      solicitante:profiles!demandas_solicitante_id_fkey(nome),
-      responsavel:profiles!demandas_responsavel_tecnico_id_fkey(nome)
-    `)
+    .select('*')
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching demandas:', error);
-    throw error;
+  if (demandasError) {
+    console.error('Error fetching demandas:', demandasError);
+    throw demandasError;
   }
 
-  return (data || []).map(row => ({
+  if (!demandas || demandas.length === 0) {
+    return [];
+  }
+
+  // Get unique user IDs
+  const userIds = [...new Set([
+    ...demandas.map(d => d.solicitante_id),
+    ...demandas.filter(d => d.responsavel_tecnico_id).map(d => d.responsavel_tecnico_id!)
+  ])];
+
+  // Fetch profiles for those users
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, nome')
+    .in('id', userIds);
+
+  const profilesMap = new Map((profiles || []).map(p => [p.id, p.nome]));
+
+  return demandas.map(row => ({
     ...mapDbToClient(row),
-    solicitante: (row.solicitante as any)?.nome || 'Usuário',
-    responsavelTecnico: (row.responsavel as any)?.nome || undefined,
+    solicitante: profilesMap.get(row.solicitante_id) || 'Usuário',
+    responsavelTecnico: row.responsavel_tecnico_id ? profilesMap.get(row.responsavel_tecnico_id) : undefined,
   }));
 }
 
 export async function fetchDemandaById(id: string): Promise<Demanda | null> {
   const { data, error } = await supabase
     .from('demandas')
-    .select(`
-      *,
-      solicitante:profiles!demandas_solicitante_id_fkey(nome),
-      responsavel:profiles!demandas_responsavel_tecnico_id_fkey(nome)
-    `)
+    .select('*')
     .eq('id', id)
     .maybeSingle();
 
@@ -79,10 +90,19 @@ export async function fetchDemandaById(id: string): Promise<Demanda | null> {
 
   if (!data) return null;
 
+  // Fetch profile names separately
+  const userIds = [data.solicitante_id, data.responsavel_tecnico_id].filter(Boolean) as string[];
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('id, nome')
+    .in('id', userIds);
+
+  const profilesMap = new Map((profiles || []).map(p => [p.id, p.nome]));
+
   return {
     ...mapDbToClient(data),
-    solicitante: (data.solicitante as any)?.nome || 'Usuário',
-    responsavelTecnico: (data.responsavel as any)?.nome || undefined,
+    solicitante: profilesMap.get(data.solicitante_id) || 'Usuário',
+    responsavelTecnico: data.responsavel_tecnico_id ? profilesMap.get(data.responsavel_tecnico_id) : undefined,
   };
 }
 
