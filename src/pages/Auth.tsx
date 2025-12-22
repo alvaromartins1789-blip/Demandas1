@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Layers, Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Layers, Mail, Lock, User, ArrowRight, KeyRound } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -31,8 +32,13 @@ export default function Auth() {
     nome: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  // Forgot password state
+  const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
+  const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
 
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -135,6 +141,55 @@ export default function Auth() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!forgotPasswordEmail) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Por favor, insira seu email.',
+      });
+      return;
+    }
+
+    const emailSchema = z.string().email('Email inválido');
+    const result = emailSchema.safeParse(forgotPasswordEmail);
+    if (!result.success) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Por favor, insira um email válido.',
+      });
+      return;
+    }
+
+    setForgotPasswordLoading(true);
+    try {
+      const { error } = await resetPassword(forgotPasswordEmail);
+      if (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Erro',
+          description: error.message,
+        });
+      } else {
+        toast({
+          title: 'Email enviado!',
+          description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+        });
+        setForgotPasswordOpen(false);
+        setForgotPasswordEmail('');
+      }
+    } catch (err) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Ocorreu um erro ao enviar o email.',
+      });
+    } finally {
+      setForgotPasswordLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background flex">
       {/* Left side - Branding */}
@@ -227,7 +282,18 @@ export default function Auth() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Senha</Label>
+                {isLogin && (
+                  <button
+                    type="button"
+                    onClick={() => setForgotPasswordOpen(true)}
+                    className="text-xs text-primary hover:underline"
+                  >
+                    Esqueci minha senha
+                  </button>
+                )}
+              </div>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
@@ -296,6 +362,45 @@ export default function Auth() {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Dialog */}
+      <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Recuperar Senha
+            </DialogTitle>
+            <DialogDescription>
+              Digite seu email e enviaremos um link para redefinir sua senha.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="forgot-email">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  id="forgot-email"
+                  type="email"
+                  placeholder="seu@email.com"
+                  value={forgotPasswordEmail}
+                  onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setForgotPasswordOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleForgotPassword} disabled={forgotPasswordLoading}>
+              {forgotPasswordLoading ? 'Enviando...' : 'Enviar Link'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

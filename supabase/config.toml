@@ -2,3 +2,6 @@ project_id = "qinodwpriovxvfquiwdv"
 
 [functions.ai-assistant]
 verify_jwt = false
+
+[functions.admin-reset-password]
+verify_jwt = false

@@ -19,7 +19,8 @@ import {
   Ban,
   CheckCircle,
   Mail,
-  Trash2
+  Trash2,
+  KeyRound
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -32,6 +33,7 @@ import { fetchAllUsersWithRoles, assignRole, removeRole, toggleUserActive, updat
 import { fetchSetores } from '@/services/setoresService';
 import { createInvite, fetchPendingInvites, cancelInvite } from '@/services/invitesService';
 import { ProfileWithRole, Setor, AppRole, roleLabels, UserInvite } from '@/types/roles';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function Usuarios() {
   const [users, setUsers] = useState<ProfileWithRole[]>([]);
@@ -41,6 +43,12 @@ export default function Usuarios() {
   const [searchTerm, setSearchTerm] = useState('');
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [newInvite, setNewInvite] = useState({ email: '', role: 'usuario' as AppRole, setor_id: '' });
+  
+  // Reset password state
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [selectedUserForReset, setSelectedUserForReset] = useState<ProfileWithRole | null>(null);
+  const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  
   const { toast } = useToast();
 
   const loadData = async () => {
@@ -158,6 +166,51 @@ export default function Usuarios() {
         variant: 'destructive',
       });
     }
+  };
+
+  const handleResetPassword = async () => {
+    if (!selectedUserForReset) return;
+
+    setResetPasswordLoading(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('admin-reset-password', {
+        body: {
+          user_email: selectedUserForReset.email,
+          action: 'send_reset_email'
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao enviar email de reset');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      toast({
+        title: 'Email enviado!',
+        description: `Email de redefinição de senha enviado para ${selectedUserForReset.email}.`,
+      });
+      setResetPasswordDialogOpen(false);
+      setSelectedUserForReset(null);
+    } catch (error: any) {
+      console.error('Error resetting password:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível enviar o email de reset.',
+        variant: 'destructive',
+      });
+    } finally {
+      setResetPasswordLoading(false);
+    }
+  };
+
+  const openResetPasswordDialog = (user: ProfileWithRole) => {
+    setSelectedUserForReset(user);
+    setResetPasswordDialogOpen(true);
   };
 
   const filteredUsers = users.filter(user =>
@@ -366,6 +419,11 @@ export default function Usuarios() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openResetPasswordDialog(user)}>
+                        <KeyRound className="h-4 w-4 mr-2" />
+                        Resetar Senha
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => handleToggleActive(user.id, user.ativo)}>
                         {user.ativo ? (
                           <>
@@ -403,6 +461,37 @@ export default function Usuarios() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Reset Password Dialog */}
+        <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5" />
+                Resetar Senha
+              </DialogTitle>
+              <DialogDescription>
+                Um email será enviado para o usuário com um link para redefinir a senha.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUserForReset && (
+              <div className="py-4">
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <p className="font-medium">{selectedUserForReset.nome}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUserForReset.email}</p>
+                </div>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleResetPassword} disabled={resetPasswordLoading}>
+                {resetPasswordLoading ? 'Enviando...' : 'Enviar Email de Reset'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </MainLayout>
   );

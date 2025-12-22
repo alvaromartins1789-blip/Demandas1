@@ -12,6 +12,7 @@ import NovaDemanda from "./pages/NovaDemanda";
 import DetalheDemanda from "./pages/DetalheDemanda";
 import EditarDemanda from "./pages/EditarDemanda";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import Usuarios from "./pages/admin/Usuarios";
 import Setores from "./pages/admin/Setores";
@@ -49,6 +50,7 @@ const App = () => (
                 <Auth />
               </AuthRedirect>
             } />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Dashboard />
