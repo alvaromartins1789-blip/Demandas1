@@ -14,7 +14,148 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      demandas: {
+        Row: {
+          area_solicitante: string
+          categoria: Database["public"]["Enums"]["categoria"]
+          created_at: string
+          dependencias: string | null
+          descricao: string
+          documentacao_ajustes: string | null
+          eficiencia_esperada: string | null
+          estimativa_horas: number | null
+          evidencia_tecnica: string | null
+          feedbacks: string[] | null
+          horas_reais: number | null
+          id: string
+          justificativa_tecnica: string | null
+          kpi_impactado: string | null
+          link_gravacao: string | null
+          nome_projeto: string
+          objetivo_esperado: string
+          observacoes_triagem: string | null
+          prioridade: Database["public"]["Enums"]["prioridade"]
+          prioridade_atualizada:
+            | Database["public"]["Enums"]["prioridade"]
+            | null
+          responsavel_tecnico_id: string | null
+          solicitante_id: string
+          status: Database["public"]["Enums"]["status_demanda"]
+          status_homologacao:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          status_triagem: Database["public"]["Enums"]["status_aprovacao"] | null
+          status_triagem_tecnica:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          tipo: Database["public"]["Enums"]["tipo_demanda"]
+          updated_at: string
+        }
+        Insert: {
+          area_solicitante: string
+          categoria: Database["public"]["Enums"]["categoria"]
+          created_at?: string
+          dependencias?: string | null
+          descricao: string
+          documentacao_ajustes?: string | null
+          eficiencia_esperada?: string | null
+          estimativa_horas?: number | null
+          evidencia_tecnica?: string | null
+          feedbacks?: string[] | null
+          horas_reais?: number | null
+          id?: string
+          justificativa_tecnica?: string | null
+          kpi_impactado?: string | null
+          link_gravacao?: string | null
+          nome_projeto: string
+          objetivo_esperado: string
+          observacoes_triagem?: string | null
+          prioridade: Database["public"]["Enums"]["prioridade"]
+          prioridade_atualizada?:
+            | Database["public"]["Enums"]["prioridade"]
+            | null
+          responsavel_tecnico_id?: string | null
+          solicitante_id: string
+          status?: Database["public"]["Enums"]["status_demanda"]
+          status_homologacao?:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          status_triagem?:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          status_triagem_tecnica?:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          tipo: Database["public"]["Enums"]["tipo_demanda"]
+          updated_at?: string
+        }
+        Update: {
+          area_solicitante?: string
+          categoria?: Database["public"]["Enums"]["categoria"]
+          created_at?: string
+          dependencias?: string | null
+          descricao?: string
+          documentacao_ajustes?: string | null
+          eficiencia_esperada?: string | null
+          estimativa_horas?: number | null
+          evidencia_tecnica?: string | null
+          feedbacks?: string[] | null
+          horas_reais?: number | null
+          id?: string
+          justificativa_tecnica?: string | null
+          kpi_impactado?: string | null
+          link_gravacao?: string | null
+          nome_projeto?: string
+          objetivo_esperado?: string
+          observacoes_triagem?: string | null
+          prioridade?: Database["public"]["Enums"]["prioridade"]
+          prioridade_atualizada?:
+            | Database["public"]["Enums"]["prioridade"]
+            | null
+          responsavel_tecnico_id?: string | null
+          solicitante_id?: string
+          status?: Database["public"]["Enums"]["status_demanda"]
+          status_homologacao?:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          status_triagem?:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          status_triagem_tecnica?:
+            | Database["public"]["Enums"]["status_aprovacao"]
+            | null
+          tipo?: Database["public"]["Enums"]["tipo_demanda"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          area: string | null
+          created_at: string
+          email: string
+          id: string
+          nome: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string | null
+          created_at?: string
+          email: string
+          id: string
+          nome: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          nome?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +164,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      categoria: "aplicativo" | "automacao" | "dashboard"
+      prioridade: "baixa" | "media" | "alta" | "urgente"
+      status_aprovacao: "pendente" | "aprovado" | "reprovado"
+      status_demanda:
+        | "triagem"
+        | "triagem-tecnica"
+        | "pdd"
+        | "desenvolvimento"
+        | "homologacao"
+        | "golive"
+        | "concluido"
+        | "reprovado"
+      tipo_demanda: "criacao" | "ajuste" | "manutencao"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +303,21 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      categoria: ["aplicativo", "automacao", "dashboard"],
+      prioridade: ["baixa", "media", "alta", "urgente"],
+      status_aprovacao: ["pendente", "aprovado", "reprovado"],
+      status_demanda: [
+        "triagem",
+        "triagem-tecnica",
+        "pdd",
+        "desenvolvimento",
+        "homologacao",
+        "golive",
+        "concluido",
+        "reprovado",
+      ],
+      tipo_demanda: ["criacao", "ajuste", "manutencao"],
+    },
   },
 } as const

@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { mockDemandas } from '@/data/mockDemandas';
+import { useDemanda } from '@/hooks/useDemandas';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PriorityBadge } from '@/components/ui/priority-badge';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,8 @@ import {
   TrendingUp,
   CheckCircle2,
   Circle,
-  FileText
+  FileText,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -37,12 +38,27 @@ const statusFlow: StatusDemanda[] = [
 
 export default function DetalheDemanda() {
   const { id } = useParams<{ id: string }>();
-  
-  const demanda = useMemo(() => {
-    return mockDemandas.find(d => d.id === id);
-  }, [id]);
+  const { data: demanda, isLoading, error } = useDemanda(id || '');
 
-  if (!demanda) {
+  const formatDate = (date: Date) => {
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    }).format(date);
+  };
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error || !demanda) {
     return (
       <MainLayout>
         <div className="text-center py-20">
@@ -54,14 +70,6 @@ export default function DetalheDemanda() {
       </MainLayout>
     );
   }
-
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric',
-    }).format(date);
-  };
 
   const currentStatusIndex = statusFlow.indexOf(demanda.status);
 
@@ -79,7 +87,7 @@ export default function DetalheDemanda() {
             <div className="flex items-start justify-between gap-4 flex-wrap">
               <div>
                 <h1 className="text-2xl font-bold text-foreground">{demanda.nomeProjeto}</h1>
-                <p className="text-muted-foreground mt-1">ID: #{demanda.id}</p>
+                <p className="text-muted-foreground mt-1">ID: #{demanda.id.slice(0, 8)}</p>
               </div>
               <div className="flex items-center gap-2">
                 <StatusBadge status={demanda.status} />

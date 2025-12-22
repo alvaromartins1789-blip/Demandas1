@@ -3,29 +3,30 @@ import { MainLayout } from '@/components/layout/MainLayout';
 import { StatCard } from '@/components/dashboard/StatCard';
 import { DemandaCard } from '@/components/dashboard/DemandaCard';
 import { StatusPipeline } from '@/components/dashboard/StatusPipeline';
-import { mockDemandas } from '@/data/mockDemandas';
+import { useDemandas } from '@/hooks/useDemandas';
 import { StatusDemanda } from '@/types/demanda';
 import { 
   ListTodo, 
   Clock, 
   CheckCircle2, 
   AlertTriangle,
-  TrendingUp
+  Loader2
 } from 'lucide-react';
 
 export default function Dashboard() {
   const [activeStatus, setActiveStatus] = useState<StatusDemanda | null>(null);
+  const { data: demandas = [], isLoading, error } = useDemandas();
 
   const stats = useMemo(() => {
-    const total = mockDemandas.length;
-    const emAndamento = mockDemandas.filter(d => 
+    const total = demandas.length;
+    const emAndamento = demandas.filter(d => 
       !['concluido', 'reprovado'].includes(d.status)
     ).length;
-    const concluidas = mockDemandas.filter(d => d.status === 'concluido').length;
-    const urgentes = mockDemandas.filter(d => d.prioridade === 'urgente').length;
+    const concluidas = demandas.filter(d => d.status === 'concluido').length;
+    const urgentes = demandas.filter(d => d.prioridade === 'urgente').length;
 
     return { total, emAndamento, concluidas, urgentes };
-  }, []);
+  }, [demandas]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<StatusDemanda, number> = {
@@ -39,23 +40,43 @@ export default function Dashboard() {
       'reprovado': 0,
     };
 
-    mockDemandas.forEach(d => {
+    demandas.forEach(d => {
       counts[d.status]++;
     });
 
     return counts;
-  }, []);
+  }, [demandas]);
 
   const filteredDemandas = useMemo(() => {
-    if (!activeStatus) return mockDemandas;
-    return mockDemandas.filter(d => d.status === activeStatus);
-  }, [activeStatus]);
+    if (!activeStatus) return demandas;
+    return demandas.filter(d => d.status === activeStatus);
+  }, [activeStatus, demandas]);
 
   const recentDemandas = useMemo(() => {
     return [...filteredDemandas]
       .sort((a, b) => b.dataAtualizacao.getTime() - a.dataAtualizacao.getTime())
       .slice(0, 6);
   }, [filteredDemandas]);
+
+  if (isLoading) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <MainLayout>
+        <div className="text-center py-12">
+          <p className="text-destructive">Erro ao carregar demandas.</p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -85,7 +106,6 @@ export default function Dashboard() {
             value={stats.concluidas}
             icon={CheckCircle2}
             iconClassName="bg-success text-success-foreground"
-            trend={{ value: 15, isPositive: true }}
           />
           <StatCard
             title="Urgentes"
@@ -118,21 +138,23 @@ export default function Dashboard() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {recentDemandas.map((demanda, index) => (
-              <div 
-                key={demanda.id}
-                style={{ animationDelay: `${index * 50}ms` }}
-                className="animate-fade-in"
-              >
-                <DemandaCard demanda={demanda} />
-              </div>
-            ))}
-          </div>
-
-          {recentDemandas.length === 0 && (
+          {recentDemandas.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentDemandas.map((demanda, index) => (
+                <div 
+                  key={demanda.id}
+                  style={{ animationDelay: `${index * 50}ms` }}
+                  className="animate-fade-in"
+                >
+                  <DemandaCard demanda={demanda} />
+                </div>
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-12 text-muted-foreground">
-              Nenhuma demanda encontrada para este status.
+              {activeStatus 
+                ? 'Nenhuma demanda encontrada para este status.'
+                : 'Nenhuma demanda cadastrada ainda. Crie sua primeira solicitação!'}
             </div>
           )}
         </div>

@@ -19,14 +19,17 @@ import {
   categoriaLabels, 
   tipoLabels 
 } from '@/types/demanda';
-import { ArrowLeft, Send, Save } from 'lucide-react';
+import { ArrowLeft, Send } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useCreateDemanda } from '@/hooks/useDemandas';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function NovaDemanda() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  const createDemanda = useCreateDemanda();
 
   const [formData, setFormData] = useState({
     nomeProjeto: '',
@@ -38,7 +41,6 @@ export default function NovaDemanda() {
     prioridade: '' as Prioridade | '',
     kpiImpactado: '',
     eficienciaEsperada: '',
-    solicitante: '',
   });
 
   const handleChange = (field: string, value: string) => {
@@ -47,18 +49,43 @@ export default function NovaDemanda() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Você precisa estar logado para criar uma demanda.',
+      });
+      return;
+    }
 
-    toast({
-      title: "Solicitação enviada!",
-      description: "Sua demanda foi registrada e está aguardando triagem.",
-    });
+    try {
+      await createDemanda.mutateAsync({
+        nomeProjeto: formData.nomeProjeto,
+        descricao: formData.descricao,
+        objetivoEsperado: formData.objetivoEsperado,
+        areaSolicitante: formData.areaSolicitante,
+        categoria: formData.categoria as Categoria,
+        tipo: formData.tipo as TipoDemanda,
+        prioridade: formData.prioridade as Prioridade,
+        kpiImpactado: formData.kpiImpactado || undefined,
+        eficienciaEsperada: formData.eficienciaEsperada || undefined,
+        solicitanteId: user.id,
+      });
 
-    setIsSubmitting(false);
-    navigate('/demandas');
+      toast({
+        title: "Solicitação enviada!",
+        description: "Sua demanda foi registrada e está aguardando triagem.",
+      });
+
+      navigate('/demandas');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao criar demanda',
+        description: error.message || 'Ocorreu um erro inesperado.',
+      });
+    }
   };
 
   const isFormValid = 
@@ -68,8 +95,7 @@ export default function NovaDemanda() {
     formData.areaSolicitante && 
     formData.categoria && 
     formData.tipo && 
-    formData.prioridade && 
-    formData.solicitante;
+    formData.prioridade;
 
   return (
     <MainLayout>
@@ -103,17 +129,6 @@ export default function NovaDemanda() {
                   placeholder="Ex: Dashboard de Vendas"
                   value={formData.nomeProjeto}
                   onChange={(e) => handleChange('nomeProjeto', e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="solicitante">Solicitante *</Label>
-                <Input
-                  id="solicitante"
-                  placeholder="Seu nome"
-                  value={formData.solicitante}
-                  onChange={(e) => handleChange('solicitante', e.target.value)}
                   required
                 />
               </div>
@@ -244,10 +259,10 @@ export default function NovaDemanda() {
             </Link>
             <Button 
               type="submit" 
-              disabled={!isFormValid || isSubmitting}
+              disabled={!isFormValid || createDemanda.isPending}
               className="gap-2"
             >
-              {isSubmitting ? (
+              {createDemanda.isPending ? (
                 <>Enviando...</>
               ) : (
                 <>
