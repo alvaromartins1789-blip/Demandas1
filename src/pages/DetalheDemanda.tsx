@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
-import { useDemanda } from '@/hooks/useDemandas';
+import { useDemanda, useDeleteDemanda } from '@/hooks/useDemandas';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { PriorityBadge } from '@/components/ui/priority-badge';
 import { Button } from '@/components/ui/button';
@@ -22,9 +22,24 @@ import {
   CheckCircle2,
   Circle,
   FileText,
-  Loader2
+  Loader2,
+  Pencil,
+  Trash2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const statusFlow: StatusDemanda[] = [
   'triagem',
@@ -38,7 +53,11 @@ const statusFlow: StatusDemanda[] = [
 
 export default function DetalheDemanda() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { user } = useAuth();
   const { data: demanda, isLoading, error } = useDemanda(id || '');
+  const deleteDemanda = useDeleteDemanda();
 
   const formatDate = (date: Date) => {
     return new Intl.DateTimeFormat('pt-BR', {
@@ -47,6 +66,27 @@ export default function DetalheDemanda() {
       year: 'numeric',
     }).format(date);
   };
+
+  const handleDelete = async () => {
+    if (!id) return;
+
+    try {
+      await deleteDemanda.mutateAsync(id);
+      toast({
+        title: "Demanda excluída",
+        description: "A demanda foi removida com sucesso.",
+      });
+      navigate('/demandas');
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir',
+        description: error.message || 'Ocorreu um erro inesperado.',
+      });
+    }
+  };
+
+  const canEdit = demanda && user && demanda.solicitanteId === user.id;
 
   if (isLoading) {
     return (
@@ -89,9 +129,44 @@ export default function DetalheDemanda() {
                 <h1 className="text-2xl font-bold text-foreground">{demanda.nomeProjeto}</h1>
                 <p className="text-muted-foreground mt-1">ID: #{demanda.id.slice(0, 8)}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <StatusBadge status={demanda.status} />
                 <PriorityBadge priority={demanda.prioridade} />
+                {canEdit && (
+                  <>
+                    <Link to={`/demanda/${id}/editar`}>
+                      <Button variant="outline" size="sm" className="gap-1.5">
+                        <Pencil className="w-3.5 h-3.5" />
+                        Editar
+                      </Button>
+                    </Link>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm" className="gap-1.5">
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Excluir
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir demanda?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Esta ação não pode ser desfeita. A demanda "{demanda.nomeProjeto}" será permanentemente removida.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={handleDelete}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            {deleteDemanda.isPending ? 'Excluindo...' : 'Excluir'}
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
               </div>
             </div>
           </div>

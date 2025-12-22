@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Demandas from "./pages/Demandas";
 import NovaDemanda from "./pages/NovaDemanda";
 import DetalheDemanda from "./pages/DetalheDemanda";
+import EditarDemanda from "./pages/EditarDemanda";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import Usuarios from "./pages/admin/Usuarios";
@@ -66,6 +67,11 @@ const App = () => (
             <Route path="/demanda/:id" element={
               <ProtectedRoute>
                 <DetalheDemanda />
+              </ProtectedRoute>
+            } />
+            <Route path="/demanda/:id/editar" element={
+              <ProtectedRoute>
+                <EditarDemanda />
               </ProtectedRoute>
             } />
             <Route path="/admin/usuarios" element={
