@@ -40,6 +40,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { AIValidationPanel } from '@/components/ai/AIValidationPanel';
 
 const statusFlow: StatusDemanda[] = [
   'triagem',
@@ -290,6 +291,9 @@ export default function DetalheDemanda() {
                 </div>
               </div>
             )}
+
+            {/* AI Validation Panel */}
+            <AIValidationPanel demanda={demanda} />
           </div>
 
           {/* Sidebar */}

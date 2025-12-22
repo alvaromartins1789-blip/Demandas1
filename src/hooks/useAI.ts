@@ -50,6 +50,32 @@ export function useAI() {
     }
   };
 
+  const validateIdea = async (data: AnalyzeInsightData): Promise<AIResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          type: 'validate_idea',
+          data,
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message);
+      }
+
+      return response as AIResponse;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao validar ideia';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const improveSuggestion = async (descricao: string, objetivoEsperado: string): Promise<AIResponse> => {
     setIsLoading(true);
     setError(null);
@@ -132,6 +158,7 @@ export function useAI() {
     isLoading,
     error,
     analyzeInsight,
+    validateIdea,
     improveSuggestion,
     generateSectorAnalysis,
     generateProductivityReport,
