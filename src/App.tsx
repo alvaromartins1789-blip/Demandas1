@@ -5,12 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { RoleProtectedRoute } from "@/components/auth/RoleProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Demandas from "./pages/Demandas";
 import NovaDemanda from "./pages/NovaDemanda";
 import DetalheDemanda from "./pages/DetalheDemanda";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Usuarios from "./pages/admin/Usuarios";
+import Setores from "./pages/admin/Setores";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +67,16 @@ const App = () => (
               <ProtectedRoute>
                 <DetalheDemanda />
               </ProtectedRoute>
+            } />
+            <Route path="/admin/usuarios" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <Usuarios />
+              </RoleProtectedRoute>
+            } />
+            <Route path="/admin/setores" element={
+              <RoleProtectedRoute allowedRoles={['super_admin']}>
+                <Setores />
+              </RoleProtectedRoute>
             } />
             <Route path="*" element={<NotFound />} />
           </Routes>
