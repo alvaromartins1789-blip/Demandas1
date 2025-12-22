@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      banned_emails: {
+        Row: {
+          banned_by: string
+          created_at: string
+          email: string
+          id: string
+          reason: string | null
+        }
+        Insert: {
+          banned_by: string
+          created_at?: string
+          email: string
+          id?: string
+          reason?: string | null
+        }
+        Update: {
+          banned_by?: string
+          created_at?: string
+          email?: string
+          id?: string
+          reason?: string | null
+        }
+        Relationships: []
+      }
       demandas: {
         Row: {
           area_solicitante: string

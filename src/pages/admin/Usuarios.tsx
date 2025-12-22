@@ -22,7 +22,9 @@ import {
   Trash2,
   KeyRound,
   Copy,
-  Check
+  Check,
+  AlertTriangle,
+  UserX
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -52,6 +54,12 @@ export default function Usuarios() {
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
   const [passwordCopied, setPasswordCopied] = useState(false);
+
+  // Delete user state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [selectedUserForDelete, setSelectedUserForDelete] = useState<ProfileWithRole | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [banEmail, setBanEmail] = useState(false);
   
   const { toast } = useToast();
 
@@ -239,6 +247,62 @@ export default function Usuarios() {
     setGeneratedPassword(null);
     setPasswordCopied(false);
     setResetPasswordDialogOpen(true);
+  };
+
+  const openDeleteDialog = (user: ProfileWithRole) => {
+    setSelectedUserForDelete(user);
+    setBanEmail(false);
+    setDeleteDialogOpen(true);
+  };
+
+  const closeDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSelectedUserForDelete(null);
+    setBanEmail(false);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!selectedUserForDelete) return;
+
+    setDeleteLoading(true);
+    
+    try {
+      const response = await supabase.functions.invoke('admin-delete-user', {
+        body: {
+          user_id: selectedUserForDelete.id,
+          user_email: selectedUserForDelete.email,
+          ban_email: banEmail,
+          reason: banEmail ? 'Banned by super admin' : undefined
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Erro ao excluir usuário');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      toast({
+        title: banEmail ? 'Usuário banido' : 'Usuário excluído',
+        description: banEmail 
+          ? `${selectedUserForDelete.email} foi excluído e o email foi banido.`
+          : `${selectedUserForDelete.email} foi excluído com sucesso.`,
+      });
+      
+      closeDeleteDialog();
+      loadData();
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      toast({
+        title: 'Erro',
+        description: error.message || 'Não foi possível excluir o usuário.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const filteredUsers = users.filter(user =>
@@ -482,6 +546,14 @@ export default function Usuarios() {
                           Remover {roleLabels[role.role]}
                         </DropdownMenuItem>
                       ))}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        onClick={() => openDeleteDialog(user)}
+                        className="text-destructive"
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        Excluir Conta
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -555,6 +627,64 @@ export default function Usuarios() {
                   </Button>
                 </>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete User Dialog */}
+        <Dialog open={deleteDialogOpen} onOpenChange={closeDeleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="h-5 w-5" />
+                Excluir Conta
+              </DialogTitle>
+              <DialogDescription>
+                Esta ação não pode ser desfeita. O usuário perderá todo o acesso ao sistema.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUserForDelete && (
+              <div className="py-4 space-y-4">
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <p className="font-medium">{selectedUserForDelete.nome}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUserForDelete.email}</p>
+                </div>
+                
+                <div className="flex items-center justify-between p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+                  <div className="space-y-1">
+                    <Label htmlFor="ban-email" className="font-medium">Banir email permanentemente</Label>
+                    <p className="text-xs text-muted-foreground">
+                      Se ativado, o usuário não poderá criar nova conta com este email.
+                    </p>
+                  </div>
+                  <Switch
+                    id="ban-email"
+                    checked={banEmail}
+                    onCheckedChange={setBanEmail}
+                  />
+                </div>
+
+                {banEmail && (
+                  <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30">
+                    <p className="text-sm text-destructive flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      O email será banido permanentemente!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={closeDeleteDialog}>
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={handleDeleteUser} 
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? 'Excluindo...' : banEmail ? 'Excluir e Banir' : 'Excluir Conta'}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
