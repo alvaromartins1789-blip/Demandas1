@@ -1,13 +1,14 @@
 import { ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { ForcePasswordChange } from './ForcePasswordChange';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
+  const { user, loading, mustChangePassword } = useAuth();
 
   if (loading) {
     return (
@@ -19,6 +20,11 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Force password change if required
+  if (mustChangePassword) {
+    return <ForcePasswordChange />;
   }
 
   return <>{children}</>;

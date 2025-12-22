@@ -8,7 +8,33 @@ const corsHeaders = {
 
 interface ResetPasswordRequest {
   user_email: string;
-  action: 'send_reset_email' | 'generate_link';
+  user_id: string;
+  action: 'send_reset_email' | 'generate_link' | 'generate_temp_password';
+}
+
+// Generate a random temporary password
+function generateTempPassword(length: number = 12): string {
+  const uppercase = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lowercase = 'abcdefghjkmnpqrstuvwxyz';
+  const numbers = '23456789';
+  const special = '!@#$%';
+  
+  const allChars = uppercase + lowercase + numbers + special;
+  
+  // Ensure at least one of each type
+  let password = '';
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+  
+  // Fill the rest randomly
+  for (let i = password.length; i < length; i++) {
+    password += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  
+  // Shuffle the password
+  return password.split('').sort(() => Math.random() - 0.5).join('');
 }
 
 serve(async (req: Request) => {
@@ -65,7 +91,7 @@ serve(async (req: Request) => {
     }
 
     // Parse request body
-    const { user_email, action }: ResetPasswordRequest = await req.json();
+    const { user_email, user_id, action }: ResetPasswordRequest = await req.json();
 
     if (!user_email) {
       return new Response(
@@ -83,7 +109,67 @@ serve(async (req: Request) => {
     const origin = req.headers.get('origin') || 'https://lovable.dev';
     const redirectUrl = `${origin}/reset-password`;
 
-    if (action === 'send_reset_email') {
+    if (action === 'generate_temp_password') {
+      // Generate a temporary password
+      const tempPassword = generateTempPassword(12);
+      
+      // Get user by email to get their ID
+      const { data: userData, error: getUserError } = await adminClient.auth.admin.listUsers();
+      
+      if (getUserError) {
+        console.error('Error getting users:', getUserError);
+        return new Response(
+          JSON.stringify({ error: 'Erro ao buscar usuário' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      const targetUser = userData.users.find(u => u.email === user_email);
+      
+      if (!targetUser) {
+        console.error('User not found:', user_email);
+        return new Response(
+          JSON.stringify({ error: 'Usuário não encontrado' }),
+          { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Update user password using admin API
+      const { error: updateError } = await adminClient.auth.admin.updateUserById(
+        targetUser.id,
+        { password: tempPassword }
+      );
+      
+      if (updateError) {
+        console.error('Error updating password:', updateError);
+        return new Response(
+          JSON.stringify({ error: updateError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Set must_change_password flag in profiles table
+      const { error: profileError } = await adminClient
+        .from('profiles')
+        .update({ must_change_password: true })
+        .eq('id', targetUser.id);
+      
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+        // Don't fail the request, just log the error
+      }
+      
+      console.log(`Temporary password generated for ${user_email}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          temp_password: tempPassword,
+          message: 'Senha temporária gerada com sucesso. O usuário deverá trocar a senha no próximo login.' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+      
+    } else if (action === 'send_reset_email') {
       // Send password reset email using admin API
       const { error: resetError } = await adminClient.auth.resetPasswordForEmail(
         user_email,
