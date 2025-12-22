@@ -6,11 +6,13 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  mustChangePassword: boolean;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: Error | null }>;
+  clearMustChangePassword: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,6 +21,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
+
+  const checkMustChangePassword = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('must_change_password')
+        .eq('id', userId)
+        .single();
+      
+      if (!error && data?.must_change_password) {
+        setMustChangePassword(true);
+      } else {
+        setMustChangePassword(false);
+      }
+    } catch (err) {
+      console.error('Error checking must_change_password:', err);
+      setMustChangePassword(false);
+    }
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -27,6 +49,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Check must_change_password after sign in
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          setTimeout(() => checkMustChangePassword(session.user.id), 0);
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          setMustChangePassword(false);
+        }
       }
     );
 
@@ -35,6 +66,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      if (session?.user) {
+        checkMustChangePassword(session.user.id);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -57,14 +92,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error, data } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    
+    // Check must_change_password after successful login
+    if (!error && data.user) {
+      await checkMustChangePassword(data.user.id);
+    }
+    
     return { error: error as Error | null };
   };
 
   const signOut = async () => {
+    setMustChangePassword(false);
     await supabase.auth.signOut();
   };
 
@@ -81,11 +123,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
+    
+    // If password update successful, clear the must_change_password flag
+    if (!error && user) {
+      await supabase
+        .from('profiles')
+        .update({ must_change_password: false })
+        .eq('id', user.id);
+      setMustChangePassword(false);
+    }
+    
     return { error: error as Error | null };
   };
 
+  const clearMustChangePassword = () => {
+    setMustChangePassword(false);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut, resetPassword, updatePassword }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      session, 
+      loading, 
+      mustChangePassword,
+      signUp, 
+      signIn, 
+      signOut, 
+      resetPassword, 
+      updatePassword,
+      clearMustChangePassword
+    }}>
       {children}
     </AuthContext.Provider>
   );

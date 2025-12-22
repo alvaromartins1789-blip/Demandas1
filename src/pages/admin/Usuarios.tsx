@@ -20,7 +20,9 @@ import {
   CheckCircle,
   Mail,
   Trash2,
-  KeyRound
+  KeyRound,
+  Copy,
+  Check
 } from 'lucide-react';
 import { 
   DropdownMenu, 
@@ -48,6 +50,8 @@ export default function Usuarios() {
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
   const [selectedUserForReset, setSelectedUserForReset] = useState<ProfileWithRole | null>(null);
   const [resetPasswordLoading, setResetPasswordLoading] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [passwordCopied, setPasswordCopied] = useState(false);
   
   const { toast } = useToast();
 
@@ -172,35 +176,38 @@ export default function Usuarios() {
     if (!selectedUserForReset) return;
 
     setResetPasswordLoading(true);
+    setGeneratedPassword(null);
+    setPasswordCopied(false);
+    
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke('admin-reset-password', {
         body: {
           user_email: selectedUserForReset.email,
-          action: 'send_reset_email'
+          user_id: selectedUserForReset.id,
+          action: 'generate_temp_password'
         }
       });
 
       if (response.error) {
-        throw new Error(response.error.message || 'Erro ao enviar email de reset');
+        throw new Error(response.error.message || 'Erro ao gerar senha temporária');
       }
 
       if (response.data?.error) {
         throw new Error(response.data.error);
       }
 
-      toast({
-        title: 'Email enviado!',
-        description: `Email de redefinição de senha enviado para ${selectedUserForReset.email}.`,
-      });
-      setResetPasswordDialogOpen(false);
-      setSelectedUserForReset(null);
+      if (response.data?.temp_password) {
+        setGeneratedPassword(response.data.temp_password);
+        toast({
+          title: 'Senha gerada!',
+          description: 'A senha temporária foi gerada. Copie e envie ao usuário.',
+        });
+      }
     } catch (error: any) {
       console.error('Error resetting password:', error);
       toast({
         title: 'Erro',
-        description: error.message || 'Não foi possível enviar o email de reset.',
+        description: error.message || 'Não foi possível gerar a senha temporária.',
         variant: 'destructive',
       });
     } finally {
@@ -208,8 +215,29 @@ export default function Usuarios() {
     }
   };
 
+  const copyPasswordToClipboard = async () => {
+    if (generatedPassword) {
+      await navigator.clipboard.writeText(generatedPassword);
+      setPasswordCopied(true);
+      toast({
+        title: 'Copiado!',
+        description: 'Senha copiada para a área de transferência.',
+      });
+      setTimeout(() => setPasswordCopied(false), 2000);
+    }
+  };
+
+  const closeResetDialog = () => {
+    setResetPasswordDialogOpen(false);
+    setSelectedUserForReset(null);
+    setGeneratedPassword(null);
+    setPasswordCopied(false);
+  };
+
   const openResetPasswordDialog = (user: ProfileWithRole) => {
     setSelectedUserForReset(user);
+    setGeneratedPassword(null);
+    setPasswordCopied(false);
     setResetPasswordDialogOpen(true);
   };
 
@@ -463,7 +491,7 @@ export default function Usuarios() {
         </Card>
 
         {/* Reset Password Dialog */}
-        <Dialog open={resetPasswordDialogOpen} onOpenChange={setResetPasswordDialogOpen}>
+        <Dialog open={resetPasswordDialogOpen} onOpenChange={closeResetDialog}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -471,24 +499,62 @@ export default function Usuarios() {
                 Resetar Senha
               </DialogTitle>
               <DialogDescription>
-                Um email será enviado para o usuário com um link para redefinir a senha.
+                {generatedPassword 
+                  ? 'Senha temporária gerada. Copie e envie ao usuário.'
+                  : 'Será gerada uma senha temporária. O usuário deverá trocar no primeiro login.'
+                }
               </DialogDescription>
             </DialogHeader>
             {selectedUserForReset && (
-              <div className="py-4">
+              <div className="py-4 space-y-4">
                 <div className="p-4 rounded-lg bg-muted/50">
                   <p className="font-medium">{selectedUserForReset.nome}</p>
                   <p className="text-sm text-muted-foreground">{selectedUserForReset.email}</p>
                 </div>
+                
+                {generatedPassword && (
+                  <div className="space-y-2">
+                    <Label>Senha Temporária</Label>
+                    <div className="flex gap-2">
+                      <Input 
+                        value={generatedPassword} 
+                        readOnly 
+                        className="font-mono text-lg"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        onClick={copyPasswordToClipboard}
+                      >
+                        {passwordCopied ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <Copy className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      O usuário deverá trocar essa senha no próximo login.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
             <DialogFooter>
-              <Button variant="outline" onClick={() => setResetPasswordDialogOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleResetPassword} disabled={resetPasswordLoading}>
-                {resetPasswordLoading ? 'Enviando...' : 'Enviar Email de Reset'}
-              </Button>
+              {generatedPassword ? (
+                <Button onClick={closeResetDialog}>
+                  Fechar
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" onClick={closeResetDialog}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleResetPassword} disabled={resetPasswordLoading}>
+                    {resetPasswordLoading ? 'Gerando...' : 'Gerar Senha Temporária'}
+                  </Button>
+                </>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
