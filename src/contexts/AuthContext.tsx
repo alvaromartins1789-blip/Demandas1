@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   mustChangePassword: boolean;
+  isActive: boolean | null;
   signUp: (email: string, password: string, nome: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -22,23 +23,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [isActive, setIsActive] = useState<boolean | null>(null);
 
-  const checkMustChangePassword = async (userId: string) => {
+  const checkUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('must_change_password')
+        .select('must_change_password, ativo')
         .eq('id', userId)
         .single();
       
-      if (!error && data?.must_change_password) {
-        setMustChangePassword(true);
+      if (!error && data) {
+        setMustChangePassword(data.must_change_password || false);
+        setIsActive(data.ativo || false);
       } else {
         setMustChangePassword(false);
+        setIsActive(false);
       }
     } catch (err) {
-      console.error('Error checking must_change_password:', err);
+      console.error('Error checking user profile:', err);
       setMustChangePassword(false);
+      setIsActive(false);
     }
   };
 
@@ -50,13 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Check must_change_password after sign in
+        // Check user profile after sign in
         if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
-          setTimeout(() => checkMustChangePassword(session.user.id), 0);
+          setTimeout(() => checkUserProfile(session.user.id), 0);
         }
         
         if (event === 'SIGNED_OUT') {
           setMustChangePassword(false);
+          setIsActive(null);
         }
       }
     );
@@ -68,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
       
       if (session?.user) {
-        checkMustChangePassword(session.user.id);
+        checkUserProfile(session.user.id);
       }
     });
 
@@ -97,9 +103,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
     });
     
-    // Check must_change_password after successful login
+    // Check user profile after successful login
     if (!error && data.user) {
-      await checkMustChangePassword(data.user.id);
+      await checkUserProfile(data.user.id);
     }
     
     return { error: error as Error | null };
@@ -107,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     setMustChangePassword(false);
+    setIsActive(null);
     await supabase.auth.signOut();
   };
 
@@ -146,6 +153,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session, 
       loading, 
       mustChangePassword,
+      isActive,
       signUp, 
       signIn, 
       signOut, 
