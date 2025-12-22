@@ -24,7 +24,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateDemanda } from '@/hooks/useDemandas';
 import { useAuth } from '@/contexts/AuthContext';
-
+import { AIInsightPanel } from '@/components/ai/AIInsightPanel';
 export default function NovaDemanda() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -220,6 +220,9 @@ export default function NovaDemanda() {
               </div>
             </div>
           </div>
+
+          {/* AI Insight Panel */}
+          <AIInsightPanel formData={formData} />
 
           {/* Impacto e Eficiência */}
           <div className="bg-card rounded-xl p-6 card-shadow border border-border/50 space-y-5">
