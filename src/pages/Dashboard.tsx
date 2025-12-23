@@ -10,7 +10,9 @@ import {
   Clock, 
   CheckCircle2, 
   AlertTriangle,
-  Loader2
+  Loader2,
+  FolderOpen,
+  PlayCircle
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -19,13 +21,18 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const total = demandas.length;
-    const emAndamento = demandas.filter(d => 
-      !['concluido', 'reprovado'].includes(d.status)
+    // Em Aberto: demandas aguardando triagem
+    const emAberto = demandas.filter(d => 
+      ['triagem', 'triagem-tecnica'].includes(d.status)
+    ).length;
+    // Em Produção: demandas aprovadas que estão sendo trabalhadas
+    const emProducao = demandas.filter(d => 
+      ['pdd', 'desenvolvimento', 'homologacao', 'golive'].includes(d.status)
     ).length;
     const concluidas = demandas.filter(d => d.status === 'concluido').length;
     const urgentes = demandas.filter(d => d.prioridade === 'urgente').length;
 
-    return { total, emAndamento, concluidas, urgentes };
+    return { total, emAberto, emProducao, concluidas, urgentes };
   }, [demandas]);
 
   const statusCounts = useMemo(() => {
@@ -88,7 +95,7 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
           <StatCard
             title="Total de Demandas"
             value={stats.total}
@@ -96,10 +103,16 @@ export default function Dashboard() {
             iconClassName="bg-primary text-primary-foreground"
           />
           <StatCard
-            title="Em Andamento"
-            value={stats.emAndamento}
-            icon={Clock}
+            title="Em Aberto"
+            value={stats.emAberto}
+            icon={FolderOpen}
             iconClassName="bg-warning text-warning-foreground"
+          />
+          <StatCard
+            title="Em Produção"
+            value={stats.emProducao}
+            icon={PlayCircle}
+            iconClassName="bg-info text-info-foreground"
           />
           <StatCard
             title="Concluídas"
