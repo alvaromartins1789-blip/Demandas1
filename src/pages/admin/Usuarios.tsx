@@ -60,6 +60,12 @@ export default function Usuarios() {
   const [selectedUserForDelete, setSelectedUserForDelete] = useState<ProfileWithRole | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [banEmail, setBanEmail] = useState(false);
+
+  // Assign role state
+  const [assignRoleDialogOpen, setAssignRoleDialogOpen] = useState(false);
+  const [selectedUserForRole, setSelectedUserForRole] = useState<ProfileWithRole | null>(null);
+  const [newRole, setNewRole] = useState<{ role: AppRole; setor_id: string }>({ role: 'equipe', setor_id: '' });
+  const [assignRoleLoading, setAssignRoleLoading] = useState(false);
   
   const { toast } = useToast();
 
@@ -106,13 +112,43 @@ export default function Usuarios() {
     }
   };
 
-  const handleAssignRole = async (userId: string, role: AppRole, setorId?: string) => {
+  const openAssignRoleDialog = (user: ProfileWithRole) => {
+    setSelectedUserForRole(user);
+    setNewRole({ role: 'equipe', setor_id: '' });
+    setAssignRoleDialogOpen(true);
+  };
+
+  const closeAssignRoleDialog = () => {
+    setAssignRoleDialogOpen(false);
+    setSelectedUserForRole(null);
+    setNewRole({ role: 'equipe', setor_id: '' });
+  };
+
+  const handleAssignRoleSubmit = async () => {
+    if (!selectedUserForRole) return;
+    
+    // Validate setor for gestor and equipe
+    if ((newRole.role === 'gestor' || newRole.role === 'equipe') && !newRole.setor_id) {
+      toast({
+        title: 'Setor obrigatório',
+        description: 'Selecione um setor para este papel.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setAssignRoleLoading(true);
     try {
-      await assignRole(userId, role, setorId);
+      await assignRole(
+        selectedUserForRole.id, 
+        newRole.role, 
+        newRole.role === 'admin' ? undefined : newRole.setor_id
+      );
       toast({
         title: 'Papel atribuído',
-        description: `O papel ${roleLabels[role]} foi atribuído com sucesso.`,
+        description: `O papel ${roleLabels[newRole.role]} foi atribuído com sucesso.`,
       });
+      closeAssignRoleDialog();
       loadData();
     } catch (error) {
       toast({
@@ -120,6 +156,8 @@ export default function Usuarios() {
         description: 'Não foi possível atribuir o papel.',
         variant: 'destructive',
       });
+    } finally {
+      setAssignRoleLoading(false);
     }
   };
 
@@ -530,12 +568,10 @@ export default function Usuarios() {
                         )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {!user.roles.some(r => r.role === 'admin') && (
-                        <DropdownMenuItem onClick={() => handleAssignRole(user.id, 'admin')}>
-                          <Shield className="h-4 w-4 mr-2" />
-                          Tornar Admin
-                        </DropdownMenuItem>
-                      )}
+                      <DropdownMenuItem onClick={() => openAssignRoleDialog(user)}>
+                        <Shield className="h-4 w-4 mr-2" />
+                        Atribuir Papel
+                      </DropdownMenuItem>
                       {user.roles.map((role) => (
                         <DropdownMenuItem 
                           key={role.id}
@@ -684,6 +720,117 @@ export default function Usuarios() {
                 disabled={deleteLoading}
               >
                 {deleteLoading ? 'Excluindo...' : banEmail ? 'Excluir e Banir' : 'Excluir Conta'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Assign Role Dialog */}
+        <Dialog open={assignRoleDialogOpen} onOpenChange={closeAssignRoleDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5" />
+                Atribuir Papel
+              </DialogTitle>
+              <DialogDescription>
+                Selecione o papel e setor (quando aplicável) para o usuário.
+              </DialogDescription>
+            </DialogHeader>
+            {selectedUserForRole && (
+              <div className="py-4 space-y-4">
+                <div className="p-4 rounded-lg bg-muted/50">
+                  <p className="font-medium">{selectedUserForRole.nome}</p>
+                  <p className="text-sm text-muted-foreground">{selectedUserForRole.email}</p>
+                  {selectedUserForRole.roles.length > 0 && (
+                    <div className="flex gap-2 mt-2">
+                      <span className="text-xs text-muted-foreground">Papéis atuais:</span>
+                      {selectedUserForRole.roles.map((r) => (
+                        <Badge key={r.id} variant="outline" className="text-xs">
+                          {roleLabels[r.role]}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Papel</Label>
+                  <Select
+                    value={newRole.role}
+                    onValueChange={(value: AppRole) => setNewRole({ ...newRole, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um papel" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="equipe">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Equipe</span>
+                          <span className="text-xs text-muted-foreground">Colaborador do setor</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="gestor">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Gestor</span>
+                          <span className="text-xs text-muted-foreground">Responsável pelo setor</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="admin">
+                        <div className="flex flex-col">
+                          <span className="font-medium">Admin</span>
+                          <span className="text-xs text-muted-foreground">Acesso total ao sistema</span>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(newRole.role === 'gestor' || newRole.role === 'equipe') && (
+                  <div className="space-y-2">
+                    <Label>Setor</Label>
+                    <Select
+                      value={newRole.setor_id}
+                      onValueChange={(value) => setNewRole({ ...newRole, setor_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um setor" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {setores.map((setor) => (
+                          <SelectItem key={setor.id} value={setor.id}>
+                            {setor.nome}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {newRole.role === 'gestor' 
+                        ? 'O gestor terá controle sobre este setor' 
+                        : 'O usuário fará parte deste setor'}
+                    </p>
+                  </div>
+                )}
+
+                {newRole.role === 'admin' && (
+                  <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                    <p className="text-sm text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Admins têm acesso total ao sistema!
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={closeAssignRoleDialog}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleAssignRoleSubmit} 
+                disabled={assignRoleLoading || ((newRole.role === 'gestor' || newRole.role === 'equipe') && !newRole.setor_id)}
+              >
+                {assignRoleLoading ? 'Atribuindo...' : 'Atribuir Papel'}
               </Button>
             </DialogFooter>
           </DialogContent>
