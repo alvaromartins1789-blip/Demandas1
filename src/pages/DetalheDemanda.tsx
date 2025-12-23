@@ -45,13 +45,16 @@ import { HistoricoTimeline } from '@/components/triagem/HistoricoTimeline';
 
 const statusFlow: StatusDemanda[] = [
   'triagem',
-  'triagem-tecnica',
-  'pdd',
   'desenvolvimento',
-  'homologacao',
-  'golive',
   'concluido',
 ];
+
+// Map actual status to simplified progress phase
+const getProgressPhase = (status: StatusDemanda): StatusDemanda => {
+  if (['triagem', 'triagem-tecnica', 'pdd'].includes(status)) return 'triagem';
+  if (['desenvolvimento', 'homologacao', 'golive'].includes(status)) return 'desenvolvimento';
+  return 'concluido';
+};
 
 export default function DetalheDemanda() {
   const { id } = useParams<{ id: string }>();
@@ -113,7 +116,8 @@ export default function DetalheDemanda() {
     );
   }
 
-  const currentStatusIndex = statusFlow.indexOf(demanda.status);
+  const currentPhase = getProgressPhase(demanda.status);
+  const currentStatusIndex = statusFlow.indexOf(currentPhase);
 
   return (
     <MainLayout>
