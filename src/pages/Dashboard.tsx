@@ -6,13 +6,13 @@ import { StatusPipeline } from '@/components/dashboard/StatusPipeline';
 import { useDemandas } from '@/hooks/useDemandas';
 import { StatusDemanda } from '@/types/demanda';
 import { 
-  ListTodo, 
-  Clock, 
+  FileText, 
   CheckCircle2, 
   AlertTriangle,
   Loader2,
   FolderOpen,
-  PlayCircle
+  PlayCircle,
+  XCircle
 } from 'lucide-react';
 
 export default function Dashboard() {
@@ -22,17 +22,31 @@ export default function Dashboard() {
   const stats = useMemo(() => {
     const total = demandas.length;
     // Em Aberto: demandas aguardando triagem
-    const emAberto = demandas.filter(d => 
-      ['triagem', 'triagem-tecnica'].includes(d.status)
-    ).length;
-    // Em Produção: demandas aprovadas que estão sendo trabalhadas
-    const emProducao = demandas.filter(d => 
-      ['pdd', 'desenvolvimento', 'homologacao', 'golive'].includes(d.status)
-    ).length;
+    const emAberto = demandas.filter(d => d.status === 'triagem').length;
+    // Em Desenvolvimento: demandas aprovadas que estão sendo trabalhadas
+    const emDesenvolvimento = demandas.filter(d => d.status === 'desenvolvimento').length;
+    // Concluídas
     const concluidas = demandas.filter(d => d.status === 'concluido').length;
-    const urgentes = demandas.filter(d => d.prioridade === 'urgente').length;
+    // Reprovadas
+    const reprovadas = demandas.filter(d => d.status === 'reprovado').length;
+    // Aceitas = desenvolvimento + concluídas (foram aprovadas na triagem)
+    const aceitas = emDesenvolvimento + concluidas;
+    
+    // Percentuais (baseado no total, excluindo em aberto)
+    const totalTriadas = aceitas + reprovadas;
+    const percentualAceitas = totalTriadas > 0 ? Math.round((aceitas / totalTriadas) * 100) : 0;
+    const percentualReprovadas = totalTriadas > 0 ? Math.round((reprovadas / totalTriadas) * 100) : 0;
 
-    return { total, emAberto, emProducao, concluidas, urgentes };
+    return { 
+      total, 
+      emAberto, 
+      emDesenvolvimento, 
+      concluidas, 
+      reprovadas, 
+      aceitas,
+      percentualAceitas,
+      percentualReprovadas
+    };
   }, [demandas]);
 
   const statusCounts = useMemo(() => {
@@ -95,22 +109,23 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           <StatCard
-            title="Total de Demandas"
+            title="Solicitações de Demandas"
             value={stats.total}
-            icon={ListTodo}
+            icon={FileText}
             iconClassName="bg-primary text-primary-foreground"
           />
           <StatCard
             title="Em Aberto"
             value={stats.emAberto}
+            subtitle="Aguardando triagem"
             icon={FolderOpen}
             iconClassName="bg-warning text-warning-foreground"
           />
           <StatCard
-            title="Em Produção"
-            value={stats.emProducao}
+            title="Em Desenvolvimento"
+            value={stats.emDesenvolvimento}
             icon={PlayCircle}
             iconClassName="bg-info text-info-foreground"
           />
@@ -121,9 +136,17 @@ export default function Dashboard() {
             iconClassName="bg-success text-success-foreground"
           />
           <StatCard
-            title="Urgentes"
-            value={stats.urgentes}
-            icon={AlertTriangle}
+            title="Aceitas"
+            value={stats.aceitas}
+            subtitle={stats.percentualAceitas > 0 ? `${stats.percentualAceitas}% das triadas` : undefined}
+            icon={CheckCircle2}
+            iconClassName="bg-success/80 text-success-foreground"
+          />
+          <StatCard
+            title="Reprovadas"
+            value={stats.reprovadas}
+            subtitle={stats.percentualReprovadas > 0 ? `${stats.percentualReprovadas}% das triadas` : undefined}
+            icon={XCircle}
             iconClassName="bg-destructive text-destructive-foreground"
           />
         </div>
