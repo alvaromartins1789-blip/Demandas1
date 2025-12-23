@@ -21,7 +21,7 @@ interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   path: string;
-  roles?: ('super_admin' | 'admin_setor' | 'usuario')[];
+  roles?: ('admin' | 'gestor' | 'equipe')[];
 }
 
 const navItems: NavItem[] = [
@@ -31,20 +31,20 @@ const navItems: NavItem[] = [
 ];
 
 const adminItems: NavItem[] = [
-  { label: 'Usuários', icon: Users, path: '/admin/usuarios', roles: ['super_admin'] },
-  { label: 'Setores', icon: Building2, path: '/admin/setores', roles: ['super_admin'] },
+  { label: 'Usuários', icon: Users, path: '/admin/usuarios', roles: ['admin'] },
+  { label: 'Setores', icon: Building2, path: '/admin/setores', roles: ['admin'] },
 ];
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { isSuperAdmin, isAdminSetor, primaryRole } = useUserRole();
+  const { isAdmin, isGestor, primaryRole } = useUserRole();
 
   const visibleAdminItems = adminItems.filter(item => {
     if (!item.roles) return true;
-    if (isSuperAdmin && item.roles.includes('super_admin')) return true;
-    if (isAdminSetor && item.roles.includes('admin_setor')) return true;
+    if (isAdmin && item.roles.includes('admin')) return true;
+    if (isGestor && item.roles.includes('gestor')) return true;
     return false;
   });
 

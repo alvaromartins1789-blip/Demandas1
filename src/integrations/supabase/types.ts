@@ -311,14 +311,14 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_setor_admin: {
+      is_setor_gestor: {
         Args: { _setor_id: string; _user_id: string }
         Returns: boolean
       }
       is_user_active: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "super_admin" | "admin_setor" | "usuario"
+      app_role: "admin" | "gestor" | "equipe"
       categoria: "aplicativo" | "automacao" | "dashboard"
       prioridade: "baixa" | "media" | "alta" | "urgente"
       status_aprovacao: "pendente" | "aprovado" | "reprovado"
@@ -459,7 +459,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["super_admin", "admin_setor", "usuario"],
+      app_role: ["admin", "gestor", "equipe"],
       categoria: ["aplicativo", "automacao", "dashboard"],
       prioridade: ["baixa", "media", "alta", "urgente"],
       status_aprovacao: ["pendente", "aprovado", "reprovado"],

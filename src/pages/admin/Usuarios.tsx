@@ -46,7 +46,7 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
-  const [newInvite, setNewInvite] = useState({ email: '', role: 'usuario' as AppRole, setor_id: '' });
+  const [newInvite, setNewInvite] = useState({ email: '', role: 'equipe' as AppRole, setor_id: '' });
   
   // Reset password state
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
@@ -152,7 +152,7 @@ export default function Usuarios() {
         description: `Um convite foi enviado para ${newInvite.email}.`,
       });
       setInviteDialogOpen(false);
-      setNewInvite({ email: '', role: 'usuario', setor_id: '' });
+      setNewInvite({ email: '', role: 'equipe', setor_id: '' });
       loadData();
     } catch (error: any) {
       toast({
@@ -272,7 +272,7 @@ export default function Usuarios() {
           user_id: selectedUserForDelete.id,
           user_email: selectedUserForDelete.email,
           ban_email: banEmail,
-          reason: banEmail ? 'Banned by super admin' : undefined
+          reason: banEmail ? 'Banned by admin' : undefined
         }
       });
 
@@ -312,8 +312,8 @@ export default function Usuarios() {
 
   const getRoleBadgeVariant = (role: AppRole) => {
     switch (role) {
-      case 'super_admin': return 'destructive';
-      case 'admin_setor': return 'default';
+      case 'admin': return 'destructive';
+      case 'gestor': return 'default';
       default: return 'secondary';
     }
   };
@@ -377,13 +377,13 @@ export default function Usuarios() {
                       <SelectValue placeholder="Selecione um papel" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="usuario">Usuário</SelectItem>
-                      <SelectItem value="admin_setor">Admin de Setor</SelectItem>
-                      <SelectItem value="super_admin">Super Admin</SelectItem>
+                      <SelectItem value="equipe">Equipe</SelectItem>
+                      <SelectItem value="gestor">Gestor</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                {(newInvite.role === 'usuario' || newInvite.role === 'admin_setor') && (
+                {(newInvite.role === 'equipe' || newInvite.role === 'gestor') && (
                   <div className="space-y-2">
                     <Label htmlFor="setor">Setor</Label>
                     <Select
@@ -530,10 +530,10 @@ export default function Usuarios() {
                         )}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      {!user.roles.some(r => r.role === 'super_admin') && (
-                        <DropdownMenuItem onClick={() => handleAssignRole(user.id, 'super_admin')}>
+                      {!user.roles.some(r => r.role === 'admin') && (
+                        <DropdownMenuItem onClick={() => handleAssignRole(user.id, 'admin')}>
                           <Shield className="h-4 w-4 mr-2" />
-                          Tornar Super Admin
+                          Tornar Admin
                         </DropdownMenuItem>
                       )}
                       {user.roles.map((role) => (

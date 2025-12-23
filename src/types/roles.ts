@@ -1,4 +1,4 @@
-export type AppRole = 'super_admin' | 'admin_setor' | 'usuario';
+export type AppRole = 'admin' | 'gestor' | 'equipe';
 
 export interface UserRole {
   id: string;
@@ -42,13 +42,134 @@ export interface ProfileWithRole {
 }
 
 export const roleLabels: Record<AppRole, string> = {
-  super_admin: 'Super Admin',
-  admin_setor: 'Admin de Setor',
-  usuario: 'Usuário',
+  admin: 'Admin',
+  gestor: 'Gestor',
+  equipe: 'Equipe',
 };
 
 export const roleDescriptions: Record<AppRole, string> = {
-  super_admin: 'Gerencia todos os usuários, setores e configurações do sistema',
-  admin_setor: 'Gerencia usuários e demandas do seu setor',
-  usuario: 'Acessa e interage com demandas do seu setor',
+  admin: 'Governança total do sistema - gerencia todos os usuários, setores e configurações',
+  gestor: 'Responsável por um ou mais setores - gerencia usuários e demandas do seu setor',
+  equipe: 'Colaborador do setor - cria insights e acompanha demandas',
+};
+
+// Definição detalhada de permissões por papel
+export type Permission = 
+  // Gestão de Usuários
+  | 'users:create'
+  | 'users:view_all'
+  | 'users:view_setor'
+  | 'users:edit_role'
+  | 'users:reset_password'
+  | 'users:toggle_active'
+  | 'users:delete'
+  | 'users:ban'
+  // Gestão de Setores
+  | 'setores:create'
+  | 'setores:edit'
+  | 'setores:delete'
+  | 'setores:view_all'
+  // Gestão de Demandas
+  | 'demandas:create'
+  | 'demandas:view_all'
+  | 'demandas:view_setor'
+  | 'demandas:view_own'
+  | 'demandas:edit_own'
+  | 'demandas:edit_setor'
+  | 'demandas:delete_own'
+  | 'demandas:approve_triagem'
+  | 'demandas:approve_homologacao'
+  | 'demandas:assign_technical'
+  // Dashboards
+  | 'dashboard:global'
+  | 'dashboard:setor'
+  | 'dashboard:personal'
+  // Configurações
+  | 'config:status'
+  | 'config:fluxos'
+  | 'config:prioridades'
+  // Insights e Interações
+  | 'insights:create'
+  | 'insights:comment'
+  | 'insights:prioritize'
+  | 'insights:vote';
+
+// Mapeamento de permissões por papel
+export const rolePermissions: Record<AppRole, Permission[]> = {
+  admin: [
+    // Todas as permissões de usuários
+    'users:create',
+    'users:view_all',
+    'users:view_setor',
+    'users:edit_role',
+    'users:reset_password',
+    'users:toggle_active',
+    'users:delete',
+    'users:ban',
+    // Todas as permissões de setores
+    'setores:create',
+    'setores:edit',
+    'setores:delete',
+    'setores:view_all',
+    // Todas as permissões de demandas
+    'demandas:create',
+    'demandas:view_all',
+    'demandas:view_setor',
+    'demandas:view_own',
+    'demandas:edit_own',
+    'demandas:edit_setor',
+    'demandas:delete_own',
+    'demandas:approve_triagem',
+    'demandas:approve_homologacao',
+    'demandas:assign_technical',
+    // Todos os dashboards
+    'dashboard:global',
+    'dashboard:setor',
+    'dashboard:personal',
+    // Todas as configurações
+    'config:status',
+    'config:fluxos',
+    'config:prioridades',
+    // Insights
+    'insights:create',
+    'insights:comment',
+    'insights:prioritize',
+    'insights:vote',
+  ],
+  gestor: [
+    // Permissões de usuários do setor
+    'users:view_setor',
+    'users:toggle_active',
+    // Permissões de demandas do setor
+    'demandas:create',
+    'demandas:view_setor',
+    'demandas:view_own',
+    'demandas:edit_own',
+    'demandas:edit_setor',
+    'demandas:delete_own',
+    'demandas:approve_triagem',
+    'demandas:approve_homologacao',
+    // Dashboard do setor
+    'dashboard:setor',
+    'dashboard:personal',
+    // Insights
+    'insights:create',
+    'insights:comment',
+    'insights:prioritize',
+    'insights:vote',
+  ],
+  equipe: [
+    // Permissões básicas de demandas
+    'demandas:create',
+    'demandas:view_own',
+    'demandas:view_setor',
+    'demandas:edit_own',
+    // Dashboard pessoal
+    'dashboard:personal',
+    'dashboard:setor',
+    // Insights
+    'insights:create',
+    'insights:comment',
+    'insights:vote',
+  ],
 };

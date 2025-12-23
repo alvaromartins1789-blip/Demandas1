@@ -1,18 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { AppRole, UserRole, Setor } from '@/types/roles';
+import { AppRole, UserRole, Setor, Permission, rolePermissions } from '@/types/roles';
 
 interface UseUserRoleReturn {
   roles: UserRole[];
   primaryRole: AppRole | null;
   setor: Setor | null;
   loading: boolean;
-  isSuperAdmin: boolean;
-  isAdminSetor: boolean;
-  isUsuario: boolean;
+  isAdmin: boolean;
+  isGestor: boolean;
+  isEquipe: boolean;
   isActive: boolean;
   hasRole: (role: AppRole) => boolean;
+  hasPermission: (permission: Permission) => boolean;
   canManageSetor: (setorId: string) => boolean;
   refetch: () => Promise<void>;
 }
@@ -84,21 +85,26 @@ export function useUserRole(): UseUserRoleReturn {
     return roles.some(r => r.role === role);
   }, [roles]);
 
+  const hasPermission = useCallback((permission: Permission): boolean => {
+    // Check if user has any role that grants this permission
+    return roles.some(r => rolePermissions[r.role]?.includes(permission));
+  }, [roles]);
+
   const canManageSetor = useCallback((setorId: string): boolean => {
-    // Super admin can manage any setor
-    if (hasRole('super_admin')) return true;
+    // Admin can manage any setor
+    if (hasRole('admin')) return true;
     
-    // Admin setor can manage their specific setor
-    return roles.some(r => r.role === 'admin_setor' && r.setor_id === setorId);
+    // Gestor can manage their specific setor
+    return roles.some(r => r.role === 'gestor' && r.setor_id === setorId);
   }, [roles, hasRole]);
 
   // Determine primary role (highest privilege)
   const primaryRole: AppRole | null = roles.length > 0
-    ? (hasRole('super_admin') 
-        ? 'super_admin' 
-        : hasRole('admin_setor') 
-          ? 'admin_setor' 
-          : 'usuario')
+    ? (hasRole('admin') 
+        ? 'admin' 
+        : hasRole('gestor') 
+          ? 'gestor' 
+          : 'equipe')
     : null;
 
   return {
@@ -106,11 +112,12 @@ export function useUserRole(): UseUserRoleReturn {
     primaryRole,
     setor,
     loading,
-    isSuperAdmin: hasRole('super_admin'),
-    isAdminSetor: hasRole('admin_setor'),
-    isUsuario: hasRole('usuario'),
+    isAdmin: hasRole('admin'),
+    isGestor: hasRole('gestor'),
+    isEquipe: hasRole('equipe'),
     isActive,
     hasRole,
+    hasPermission,
     canManageSetor,
     refetch: fetchUserRoleData,
   };
