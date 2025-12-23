@@ -303,6 +303,7 @@ export type Database = {
     }
     Functions: {
       get_user_setor_id: { Args: { _user_id: string }; Returns: string }
+      has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
