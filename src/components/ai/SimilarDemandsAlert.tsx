@@ -62,14 +62,37 @@ export function SimilarDemandsAlert({ formData, onDismiss }: SimilarDemandsAlert
 
       const result = await findSimilarDemands(novaDemanda, demandasExistentes);
       
+      console.log('AI response for similar demands:', result);
+      
       if (result.success && result.response) {
         try {
-          const parsed = JSON.parse(result.response);
-          if (parsed.similares && Array.isArray(parsed.similares)) {
-            setSimilarDemands(parsed.similares.filter((s: SimilarDemand) => s.score >= 60));
+          // Try to extract JSON from the response (handle markdown code blocks)
+          let jsonStr = result.response;
+          
+          // Remove markdown code blocks if present
+          const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (jsonMatch) {
+            jsonStr = jsonMatch[1].trim();
           }
-        } catch {
-          console.error('Erro ao parsear resposta da IA:', result.response);
+          
+          // Try to find JSON object in the response
+          const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/);
+          if (jsonObjectMatch) {
+            jsonStr = jsonObjectMatch[0];
+          }
+          
+          console.log('Parsed JSON string:', jsonStr);
+          
+          const parsed = JSON.parse(jsonStr);
+          console.log('Parsed result:', parsed);
+          
+          if (parsed.similares && Array.isArray(parsed.similares)) {
+            const filtered = parsed.similares.filter((s: SimilarDemand) => s.score >= 60);
+            console.log('Filtered similar demands:', filtered);
+            setSimilarDemands(filtered);
+          }
+        } catch (parseError) {
+          console.error('Erro ao parsear resposta da IA:', result.response, parseError);
         }
       }
     } catch (error) {
