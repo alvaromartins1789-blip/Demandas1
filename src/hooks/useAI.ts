@@ -154,6 +154,32 @@ export function useAI() {
     }
   };
 
+  const findSimilarDemands = async (novaDemanda: any, demandasExistentes: any[]): Promise<AIResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          type: 'find_similar_demands',
+          data: { novaDemanda, demandasExistentes },
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message);
+      }
+
+      return response as AIResponse;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar demandas similares';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -162,5 +188,6 @@ export function useAI() {
     improveSuggestion,
     generateSectorAnalysis,
     generateProductivityReport,
+    findSimilarDemands,
   };
 }
