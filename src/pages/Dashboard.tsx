@@ -20,7 +20,6 @@ export default function Dashboard() {
   const { data: demandas = [], isLoading, error } = useDemandas();
 
   const stats = useMemo(() => {
-    const total = demandas.length;
     // Em Aberto: demandas aguardando triagem
     const emAberto = demandas.filter(d => d.status === 'triagem').length;
     // Em Desenvolvimento: demandas aprovadas que estão sendo trabalhadas
@@ -32,7 +31,10 @@ export default function Dashboard() {
     // Aceitas = desenvolvimento + concluídas (foram aprovadas na triagem)
     const aceitas = emDesenvolvimento + concluidas;
     
-    // Percentuais (baseado no total, excluindo em aberto)
+    // Total = em aberto + aceitas + reprovadas
+    const total = emAberto + aceitas + reprovadas;
+    
+    // Percentuais (baseado no total triado)
     const totalTriadas = aceitas + reprovadas;
     const percentualAceitas = totalTriadas > 0 ? Math.round((aceitas / totalTriadas) * 100) : 0;
     const percentualReprovadas = totalTriadas > 0 ? Math.round((reprovadas / totalTriadas) * 100) : 0;
