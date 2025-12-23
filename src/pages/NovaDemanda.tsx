@@ -24,14 +24,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useCreateDemanda } from '@/hooks/useDemandas';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAI } from '@/hooks/useAI';
 import { AIInsightPanel } from '@/components/ai/AIInsightPanel';
 import { SimilarDemandsAlert } from '@/components/ai/SimilarDemandsAlert';
+import { AIWritingAssistant } from '@/components/ai/AIWritingAssistant';
 
 export default function NovaDemanda() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
   const createDemanda = useCreateDemanda();
+  const { generateDescription, generateObjective, isLoading: isAILoading } = useAI();
 
   const [formData, setFormData] = useState({
     nomeProjeto: '',
@@ -198,7 +201,16 @@ export default function NovaDemanda() {
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição da Solicitação *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="descricao">Descrição da Solicitação *</Label>
+                  <AIWritingAssistant
+                    field="descricao"
+                    formContext={formData}
+                    onApply={(value) => handleChange('descricao', value)}
+                    generateFunction={generateDescription}
+                    isLoading={isAILoading}
+                  />
+                </div>
                 <Textarea
                   id="descricao"
                   placeholder="Descreva detalhadamente o que precisa ser desenvolvido ou ajustado..."
@@ -210,7 +222,16 @@ export default function NovaDemanda() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="objetivoEsperado">Objetivo Esperado *</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="objetivoEsperado">Objetivo Esperado *</Label>
+                  <AIWritingAssistant
+                    field="objetivoEsperado"
+                    formContext={formData}
+                    onApply={(value) => handleChange('objetivoEsperado', value)}
+                    generateFunction={generateObjective}
+                    isLoading={isAILoading}
+                  />
+                </div>
                 <Textarea
                   id="objetivoEsperado"
                   placeholder="Qual resultado você espera alcançar com esta demanda?"

@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface AIRequest {
-  type: 'analyze_insight' | 'improve_suggestion' | 'validate_idea' | 'sector_analysis' | 'productivity_report' | 'find_similar_demands';
+  type: 'analyze_insight' | 'improve_suggestion' | 'validate_idea' | 'sector_analysis' | 'productivity_report' | 'find_similar_demands' | 'generate_description' | 'generate_objective';
   data: {
     nomeProjeto?: string;
     descricao?: string;
@@ -21,6 +21,7 @@ interface AIRequest {
     demandas?: any[];
     novaDemanda?: any;
     demandasExistentes?: any[];
+    hint?: string;
   };
 }
 
@@ -151,6 +152,54 @@ Demandas existentes para comparar:
 ${JSON.stringify(data.demandasExistentes, null, 2)}
 
 Retorne um JSON com as demandas que têm score de similaridade >= 60.`;
+        break;
+
+      case 'generate_description':
+        systemPrompt = `Você é um especialista em redação de demandas técnicas de TI.
+Sua função é gerar descrições completas, claras e profissionais para demandas de projetos.
+A descrição deve:
+- Ser detalhada mas objetiva (entre 100-200 palavras)
+- Explicar O QUE precisa ser feito
+- Incluir contexto relevante do negócio
+- Mencionar funcionalidades principais esperadas
+- Usar linguagem técnica quando apropriado
+
+Responda APENAS com o texto da descrição, sem formatação markdown, sem aspas, sem explicações adicionais.`;
+
+        userPrompt = `Gere uma descrição profissional para uma demanda de TI com o seguinte contexto:
+
+Projeto: ${data.nomeProjeto || 'Não informado'}
+Categoria: ${data.categoria || 'Não informada'}
+Tipo: ${data.tipo || 'Não informado'}
+Área Solicitante: ${data.areaSolicitante || 'Não informada'}
+Prioridade: ${data.prioridade || 'Não informada'}
+${data.hint ? `\nIdeia do usuário: ${data.hint}` : ''}
+${data.objetivoEsperado ? `\nObjetivo já definido: ${data.objetivoEsperado}` : ''}
+
+Gere apenas o texto da descrição, sem título ou formatação.`;
+        break;
+
+      case 'generate_objective':
+        systemPrompt = `Você é um especialista em redação de demandas técnicas de TI.
+Sua função é gerar objetivos esperados claros, mensuráveis e alcançáveis para demandas de projetos.
+O objetivo deve:
+- Ser específico e mensurável quando possível
+- Descrever o RESULTADO esperado (não o processo)
+- Incluir benefícios tangíveis para o negócio
+- Ser conciso (entre 50-100 palavras)
+
+Responda APENAS com o texto do objetivo, sem formatação markdown, sem aspas, sem explicações adicionais.`;
+
+        userPrompt = `Gere um objetivo esperado profissional para uma demanda de TI com o seguinte contexto:
+
+Projeto: ${data.nomeProjeto || 'Não informado'}
+Categoria: ${data.categoria || 'Não informada'}
+Tipo: ${data.tipo || 'Não informado'}
+Área Solicitante: ${data.areaSolicitante || 'Não informada'}
+${data.descricao ? `\nDescrição da demanda: ${data.descricao}` : ''}
+${data.hint ? `\nIdeia do usuário: ${data.hint}` : ''}
+
+Gere apenas o texto do objetivo, sem título ou formatação.`;
         break;
 
       default:
