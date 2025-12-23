@@ -38,6 +38,50 @@ export type Database = {
         }
         Relationships: []
       }
+      demanda_historico: {
+        Row: {
+          acao: string
+          created_at: string
+          demanda_id: string
+          id: string
+          observacoes: string | null
+          status_anterior: string | null
+          status_novo: string | null
+          usuario_id: string
+          usuario_nome: string
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          demanda_id: string
+          id?: string
+          observacoes?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id: string
+          usuario_nome: string
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          demanda_id?: string
+          id?: string
+          observacoes?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          usuario_id?: string
+          usuario_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "demanda_historico_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       demandas: {
         Row: {
           area_solicitante: string
@@ -73,6 +117,12 @@ export type Database = {
             | Database["public"]["Enums"]["status_aprovacao"]
             | null
           tipo: Database["public"]["Enums"]["tipo_demanda"]
+          triado_em: string | null
+          triado_por_id: string | null
+          triado_por_nome: string | null
+          triagem_tecnica_em: string | null
+          triagem_tecnica_por_id: string | null
+          triagem_tecnica_por_nome: string | null
           updated_at: string
         }
         Insert: {
@@ -111,6 +161,12 @@ export type Database = {
             | Database["public"]["Enums"]["status_aprovacao"]
             | null
           tipo: Database["public"]["Enums"]["tipo_demanda"]
+          triado_em?: string | null
+          triado_por_id?: string | null
+          triado_por_nome?: string | null
+          triagem_tecnica_em?: string | null
+          triagem_tecnica_por_id?: string | null
+          triagem_tecnica_por_nome?: string | null
           updated_at?: string
         }
         Update: {
@@ -149,6 +205,12 @@ export type Database = {
             | Database["public"]["Enums"]["status_aprovacao"]
             | null
           tipo?: Database["public"]["Enums"]["tipo_demanda"]
+          triado_em?: string | null
+          triado_por_id?: string | null
+          triado_por_nome?: string | null
+          triagem_tecnica_em?: string | null
+          triagem_tecnica_por_id?: string | null
+          triagem_tecnica_por_nome?: string | null
           updated_at?: string
         }
         Relationships: []

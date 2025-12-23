@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { useDemanda, useDeleteDemanda } from '@/hooks/useDemandas';
@@ -41,6 +40,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { AIValidationPanel } from '@/components/ai/AIValidationPanel';
+import { TriagemActions } from '@/components/triagem/TriagemActions';
+import { HistoricoTimeline } from '@/components/triagem/HistoricoTimeline';
 
 const statusFlow: StatusDemanda[] = [
   'triagem',
@@ -291,6 +292,12 @@ export default function DetalheDemanda() {
                 </div>
               </div>
             )}
+
+            {/* Triagem Actions - Only for admin/gestor when status is triagem or triagem-tecnica */}
+            <TriagemActions demanda={demanda} />
+
+            {/* Histórico Timeline */}
+            <HistoricoTimeline demandaId={demanda.id} />
 
             {/* AI Validation Panel */}
             <AIValidationPanel demanda={demanda} />
