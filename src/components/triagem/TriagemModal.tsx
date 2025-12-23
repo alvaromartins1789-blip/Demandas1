@@ -16,7 +16,7 @@ interface TriagemModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   tipo: 'aprovar' | 'reprovar';
-  etapa: 'triagem' | 'triagem-tecnica';
+  etapa: 'triagem' | 'conclusao';
   usuarioNome: string;
   onConfirm: (observacoes: string) => Promise<void>;
   isLoading?: boolean;
@@ -34,7 +34,8 @@ export function TriagemModal({
   const [observacoes, setObservacoes] = useState('');
 
   const isAprovar = tipo === 'aprovar';
-  const etapaLabel = etapa === 'triagem' ? 'Triagem' : 'Triagem Técnica';
+  const isConclusao = etapa === 'conclusao';
+  const etapaLabel = isConclusao ? 'Conclusão' : 'Triagem';
 
   const handleConfirm = async () => {
     if (!observacoes.trim()) return;
@@ -53,12 +54,14 @@ export function TriagemModal({
             ) : (
               <XCircle className="w-5 h-5 text-destructive" />
             )}
-            {isAprovar ? 'Aprovar' : 'Reprovar'} {etapaLabel}
+            {isConclusao ? 'Concluir Demanda' : (isAprovar ? 'Aprovar' : 'Reprovar')} {!isConclusao && etapaLabel}
           </DialogTitle>
           <DialogDescription>
-            {isAprovar
-              ? `A demanda será aprovada e avançará no fluxo.`
-              : `A demanda será reprovada e marcada como encerrada.`}
+            {isConclusao
+              ? 'A demanda será marcada como concluída.'
+              : isAprovar
+              ? 'A demanda será aprovada e irá para desenvolvimento.'
+              : 'A demanda será reprovada e marcada como encerrada.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -68,7 +71,7 @@ export function TriagemModal({
               Esta ação será registrada como:
             </p>
             <p className="text-sm font-medium text-foreground mt-1">
-              "{etapaLabel} {isAprovar ? 'aprovada' : 'reprovada'} por {usuarioNome}"
+              "{isConclusao ? 'Demanda concluída' : (etapaLabel + (isAprovar ? ' aprovada' : ' reprovada'))} por {usuarioNome}"
             </p>
           </div>
 
@@ -79,7 +82,9 @@ export function TriagemModal({
             <Textarea
               id="observacoes"
               placeholder={
-                isAprovar
+                isConclusao
+                  ? 'Adicione observações sobre a conclusão...'
+                  : isAprovar
                   ? 'Justifique a aprovação da demanda...'
                   : 'Explique o motivo da reprovação...'
               }
@@ -103,9 +108,10 @@ export function TriagemModal({
             variant={isAprovar ? 'default' : 'destructive'}
             onClick={handleConfirm}
             disabled={!observacoes.trim() || isLoading}
+            className={isAprovar ? 'bg-success hover:bg-success/90' : ''}
           >
             {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isAprovar ? 'Confirmar Aprovação' : 'Confirmar Reprovação'}
+            {isConclusao ? 'Confirmar Conclusão' : (isAprovar ? 'Confirmar Aprovação' : 'Confirmar Reprovação')}
           </Button>
         </DialogFooter>
       </DialogContent>
