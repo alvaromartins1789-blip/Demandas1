@@ -180,6 +180,58 @@ export function useAI() {
     }
   };
 
+  const generateDescription = async (context: any, hint?: string): Promise<AIResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          type: 'generate_description',
+          data: { ...context, hint },
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message);
+      }
+
+      return response as AIResponse;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao gerar descrição';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const generateObjective = async (context: any, hint?: string): Promise<AIResponse> => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data: response, error: fnError } = await supabase.functions.invoke('ai-assistant', {
+        body: {
+          type: 'generate_objective',
+          data: { ...context, hint },
+        },
+      });
+
+      if (fnError) {
+        throw new Error(fnError.message);
+      }
+
+      return response as AIResponse;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Erro ao gerar objetivo';
+      setError(errorMessage);
+      return { success: false, error: errorMessage };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return {
     isLoading,
     error,
@@ -189,5 +241,7 @@ export function useAI() {
     generateSectorAnalysis,
     generateProductivityReport,
     findSimilarDemands,
+    generateDescription,
+    generateObjective,
   };
 }
