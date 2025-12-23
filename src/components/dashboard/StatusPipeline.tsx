@@ -2,11 +2,7 @@ import { StatusDemanda, statusLabels } from '@/types/demanda';
 import { cn } from '@/lib/utils';
 import { 
   Search, 
-  Microscope, 
-  FileText, 
   Code, 
-  CheckCircle2, 
-  Rocket, 
   Trophy,
   XCircle
 } from 'lucide-react';
@@ -17,24 +13,15 @@ interface StatusPipelineProps {
   activeStatus?: StatusDemanda | null;
 }
 
-const statusConfig: Record<StatusDemanda, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
+const statusConfig: Record<string, { icon: React.ComponentType<{ className?: string }>; color: string }> = {
   'triagem': { icon: Search, color: 'bg-status-triagem' },
-  'triagem-tecnica': { icon: Microscope, color: 'bg-status-triagem-tecnica' },
-  'pdd': { icon: FileText, color: 'bg-status-pdd' },
   'desenvolvimento': { icon: Code, color: 'bg-status-desenvolvimento' },
-  'homologacao': { icon: CheckCircle2, color: 'bg-status-homologacao' },
-  'golive': { icon: Rocket, color: 'bg-status-golive' },
   'concluido': { icon: Trophy, color: 'bg-status-concluido' },
-  'reprovado': { icon: XCircle, color: 'bg-status-reprovado' },
 };
 
 const pipelineOrder: StatusDemanda[] = [
   'triagem',
-  'triagem-tecnica',
-  'pdd',
   'desenvolvimento',
-  'homologacao',
-  'golive',
   'concluido',
 ];
 
