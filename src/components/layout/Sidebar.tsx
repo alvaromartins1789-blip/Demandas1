@@ -6,7 +6,6 @@ import {
   PlusCircle,
   ChevronLeft,
   ChevronRight,
-  Layers,
   LogOut,
   User,
   Users,
@@ -55,15 +54,20 @@ export function Sidebar() {
         collapsed ? "w-16" : "w-64"
       )}
     >
-      {/* Logo */}
+      {/* Logo Section */}
       <div className="h-16 flex items-center px-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-sidebar-ring/20 flex items-center justify-center">
-            <Layers className="w-5 h-5 text-sidebar-ring" />
+          {/* Aqui foi alterado de <Layers /> para a tag <img> buscando o seu arquivo */}
+          <div className="w-9 h-9 flex items-center justify-center overflow-hidden">
+            <img 
+              src="/placeholder.svg" 
+              alt="Logo Empresa" 
+              className="w-full h-full object-contain" 
+            />
           </div>
           {!collapsed && (
             <div className="animate-fade-in">
-              <h1 className="font-semibold text-sidebar-foreground">PDD App</h1>
+              <h1 className="font-semibold text-sidebar-foreground">Portal de Demandas</h1>
               <p className="text-xs text-sidebar-foreground/60">Solicitações</p>
             </div>
           )}
