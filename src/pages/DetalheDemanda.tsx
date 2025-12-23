@@ -51,9 +51,12 @@ const statusFlow: StatusDemanda[] = [
 
 // Map actual status to simplified progress phase
 const getProgressPhase = (status: StatusDemanda): StatusDemanda => {
-  if (['triagem', 'triagem-tecnica', 'pdd'].includes(status)) return 'triagem';
-  if (['desenvolvimento', 'homologacao', 'golive'].includes(status)) return 'desenvolvimento';
-  return 'concluido';
+  if (status === 'triagem') return 'triagem';
+  if (status === 'desenvolvimento') return 'desenvolvimento';
+  if (status === 'concluido') return 'concluido';
+  if (status === 'reprovado') return 'reprovado';
+  // Fallback for any other status
+  return status;
 };
 
 export default function DetalheDemanda() {

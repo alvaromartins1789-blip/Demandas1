@@ -22,11 +22,11 @@ export async function aprovarTriagem(params: TriagemParams): Promise<void> {
 
   const statusAnterior = demanda.status;
 
-  // Update demanda
+  // Update demanda - goes directly to desenvolvimento
   const { error: updateError } = await supabase
     .from('demandas')
     .update({
-      status: 'triagem-tecnica',
+      status: 'desenvolvimento',
       status_triagem: 'aprovado',
       observacoes_triagem: observacoes,
       triado_por_id: usuarioId,
@@ -46,7 +46,7 @@ export async function aprovarTriagem(params: TriagemParams): Promise<void> {
       usuario_nome: usuarioNome,
       acao: 'triagem_aprovada',
       status_anterior: statusAnterior,
-      status_novo: 'triagem-tecnica',
+      status_novo: 'desenvolvimento',
       observacoes,
     });
 
@@ -98,7 +98,7 @@ export async function reprovarTriagem(params: TriagemParams): Promise<void> {
   if (historyError) throw historyError;
 }
 
-export async function aprovarTriagemTecnica(params: TriagemParams): Promise<void> {
+export async function concluirDemanda(params: TriagemParams): Promise<void> {
   const { demandaId, usuarioId, usuarioNome, observacoes } = params;
 
   // Get current demanda status
@@ -116,12 +116,7 @@ export async function aprovarTriagemTecnica(params: TriagemParams): Promise<void
   const { error: updateError } = await supabase
     .from('demandas')
     .update({
-      status: 'pdd',
-      status_triagem_tecnica: 'aprovado',
-      justificativa_tecnica: observacoes,
-      triagem_tecnica_por_id: usuarioId,
-      triagem_tecnica_por_nome: usuarioNome,
-      triagem_tecnica_em: new Date().toISOString(),
+      status: 'concluido',
     })
     .eq('id', demandaId);
 
@@ -134,54 +129,9 @@ export async function aprovarTriagemTecnica(params: TriagemParams): Promise<void
       demanda_id: demandaId,
       usuario_id: usuarioId,
       usuario_nome: usuarioNome,
-      acao: 'triagem_tecnica_aprovada',
+      acao: 'status_alterado',
       status_anterior: statusAnterior,
-      status_novo: 'pdd',
-      observacoes,
-    });
-
-  if (historyError) throw historyError;
-}
-
-export async function reprovarTriagemTecnica(params: TriagemParams): Promise<void> {
-  const { demandaId, usuarioId, usuarioNome, observacoes } = params;
-
-  // Get current demanda status
-  const { data: demanda, error: fetchError } = await supabase
-    .from('demandas')
-    .select('status')
-    .eq('id', demandaId)
-    .single();
-
-  if (fetchError) throw fetchError;
-
-  const statusAnterior = demanda.status;
-
-  // Update demanda
-  const { error: updateError } = await supabase
-    .from('demandas')
-    .update({
-      status: 'reprovado',
-      status_triagem_tecnica: 'reprovado',
-      justificativa_tecnica: observacoes,
-      triagem_tecnica_por_id: usuarioId,
-      triagem_tecnica_por_nome: usuarioNome,
-      triagem_tecnica_em: new Date().toISOString(),
-    })
-    .eq('id', demandaId);
-
-  if (updateError) throw updateError;
-
-  // Insert history record
-  const { error: historyError } = await supabase
-    .from('demanda_historico')
-    .insert({
-      demanda_id: demandaId,
-      usuario_id: usuarioId,
-      usuario_nome: usuarioNome,
-      acao: 'triagem_tecnica_reprovada',
-      status_anterior: statusAnterior,
-      status_novo: 'reprovado',
+      status_novo: 'concluido',
       observacoes,
     });
 

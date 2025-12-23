@@ -2,8 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   aprovarTriagem,
   reprovarTriagem,
-  aprovarTriagemTecnica,
-  reprovarTriagemTecnica,
+  concluirDemanda,
   fetchHistoricoDemanda,
 } from '@/services/triagemService';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +26,7 @@ export function useAprovarTriagem() {
       queryClient.invalidateQueries({ queryKey: ['historico', variables.demandaId] });
       toast({
         title: 'Triagem aprovada',
-        description: 'A demanda foi aprovada e encaminhada para triagem técnica.',
+        description: 'A demanda foi aprovada e encaminhada para desenvolvimento.',
       });
     },
     onError: (error: Error) => {
@@ -65,50 +64,25 @@ export function useReprovarTriagem() {
   });
 }
 
-export function useAprovarTriagemTecnica() {
+export function useConcluirDemanda() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: (params: TriagemParams) => aprovarTriagemTecnica(params),
+    mutationFn: (params: TriagemParams) => concluirDemanda(params),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['demanda', variables.demandaId] });
       queryClient.invalidateQueries({ queryKey: ['demandas'] });
       queryClient.invalidateQueries({ queryKey: ['historico', variables.demandaId] });
       toast({
-        title: 'Triagem técnica aprovada',
-        description: 'A demanda foi aprovada e encaminhada para elaboração do PDD.',
+        title: 'Demanda concluída',
+        description: 'A demanda foi marcada como concluída com sucesso.',
       });
     },
     onError: (error: Error) => {
       toast({
         variant: 'destructive',
-        title: 'Erro ao aprovar triagem técnica',
-        description: error.message,
-      });
-    },
-  });
-}
-
-export function useReprovarTriagemTecnica() {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: (params: TriagemParams) => reprovarTriagemTecnica(params),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['demanda', variables.demandaId] });
-      queryClient.invalidateQueries({ queryKey: ['demandas'] });
-      queryClient.invalidateQueries({ queryKey: ['historico', variables.demandaId] });
-      toast({
-        title: 'Triagem técnica reprovada',
-        description: 'A demanda foi reprovada na triagem técnica.',
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        variant: 'destructive',
-        title: 'Erro ao reprovar triagem técnica',
+        title: 'Erro ao concluir demanda',
         description: error.message,
       });
     },
