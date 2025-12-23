@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface AIRequest {
-  type: 'analyze_insight' | 'improve_suggestion' | 'validate_idea' | 'sector_analysis' | 'productivity_report';
+  type: 'analyze_insight' | 'improve_suggestion' | 'validate_idea' | 'sector_analysis' | 'productivity_report' | 'find_similar_demands';
   data: {
     nomeProjeto?: string;
     descricao?: string;
@@ -19,6 +19,8 @@ interface AIRequest {
     kpiImpactado?: string;
     eficienciaEsperada?: string;
     demandas?: any[];
+    novaDemanda?: any;
+    demandasExistentes?: any[];
   };
 }
 
@@ -128,6 +130,27 @@ Inclua:
 2. **Análise de Ganhos de Eficiência**
 3. **Recomendações Estratégicas**
 4. **Métricas Chave**`;
+        break;
+
+      case 'find_similar_demands':
+        systemPrompt = `Você é um especialista em análise de similaridade textual para demandas de TI.
+Compare a nova demanda com as demandas existentes e identifique quais são similares.
+Considere principalmente: descrição, objetivo esperado, categoria e tipo.
+Demandas são similares quando tratam do mesmo problema, sistema ou processo, mesmo com palavras diferentes.
+
+IMPORTANTE: Responda APENAS com um JSON válido, sem texto adicional.
+O formato deve ser exatamente:
+{"similares": [{"id": "uuid", "score": 85, "motivo": "razão curta"}]}
+
+Se não houver similares, retorne: {"similares": []}`;
+
+        userPrompt = `Nova demanda a ser analisada:
+${JSON.stringify(data.novaDemanda, null, 2)}
+
+Demandas existentes para comparar:
+${JSON.stringify(data.demandasExistentes, null, 2)}
+
+Retorne um JSON com as demandas que têm score de similaridade >= 60.`;
         break;
 
       default:

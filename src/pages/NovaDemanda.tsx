@@ -25,6 +25,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useCreateDemanda } from '@/hooks/useDemandas';
 import { useAuth } from '@/contexts/AuthContext';
 import { AIInsightPanel } from '@/components/ai/AIInsightPanel';
+import { SimilarDemandsAlert } from '@/components/ai/SimilarDemandsAlert';
+
 export default function NovaDemanda() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -220,6 +222,9 @@ export default function NovaDemanda() {
               </div>
             </div>
           </div>
+
+          {/* Similar Demands Alert */}
+          <SimilarDemandsAlert formData={formData} />
 
           {/* AI Insight Panel */}
           <AIInsightPanel formData={formData} />
