@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
       .from('user_roles')
       .select('role')
       .eq('user_id', currentUser.id)
-      .eq('role', 'super_admin')
+      .eq('role', 'admin')
       .single();
 
     if (roleError || !roleData) {
