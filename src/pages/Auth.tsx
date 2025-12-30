@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Layers, Mail, Lock, User, ArrowRight, KeyRound } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, KeyRound } from 'lucide-react';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -33,7 +33,6 @@ export default function Auth() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   
-  // Forgot password state
   const [forgotPasswordOpen, setForgotPasswordOpen] = useState(false);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [forgotPasswordLoading, setForgotPasswordLoading] = useState(false);
@@ -69,27 +68,18 @@ export default function Auth() {
 
         const { error } = await signIn(formData.email, formData.password);
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao entrar',
-              description: 'Email ou senha incorretos.',
-            });
-          } else {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao entrar',
-              description: error.message,
-            });
-          }
+          toast({
+            variant: 'destructive',
+            title: 'Erro ao entrar',
+            description: error.message.includes('Invalid login credentials') 
+              ? 'Email ou senha incorretos.' 
+              : error.message,
+          });
           setIsLoading(false);
           return;
         }
 
-        toast({
-          title: 'Bem-vindo!',
-          description: 'Login realizado com sucesso.',
-        });
+        toast({ title: 'Bem-vindo!', description: 'Login realizado com sucesso.' });
         navigate('/');
       } else {
         const result = signupSchema.safeParse(formData);
@@ -107,35 +97,22 @@ export default function Auth() {
 
         const { error } = await signUp(formData.email, formData.password, formData.nome);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao criar conta',
-              description: 'Este email já está cadastrado.',
-            });
-          } else {
-            toast({
-              variant: 'destructive',
-              title: 'Erro ao criar conta',
-              description: error.message,
-            });
-          }
+          toast({
+            variant: 'destructive',
+            title: 'Erro ao criar conta',
+            description: error.message.includes('already registered') 
+              ? 'Este email já está cadastrado.' 
+              : error.message,
+          });
           setIsLoading(false);
           return;
         }
 
-        toast({
-          title: 'Conta criada!',
-          description: 'Você foi logado automaticamente.',
-        });
+        toast({ title: 'Conta criada!', description: 'Você foi logado automaticamente.' });
         navigate('/');
       }
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Ocorreu um erro inesperado.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Ocorreu um erro inesperado.' });
     } finally {
       setIsLoading(false);
     }
@@ -143,22 +120,14 @@ export default function Auth() {
 
   const handleForgotPassword = async () => {
     if (!forgotPasswordEmail) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Por favor, insira seu email.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Por favor, insira seu email.' });
       return;
     }
 
     const emailSchema = z.string().email('Email inválido');
     const result = emailSchema.safeParse(forgotPasswordEmail);
     if (!result.success) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Por favor, insira um email válido.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Por favor, insira um email válido.' });
       return;
     }
 
@@ -166,25 +135,14 @@ export default function Auth() {
     try {
       const { error } = await resetPassword(forgotPasswordEmail);
       if (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Erro',
-          description: error.message,
-        });
+        toast({ variant: 'destructive', title: 'Erro', description: error.message });
       } else {
-        toast({
-          title: 'Email enviado!',
-          description: 'Verifique sua caixa de entrada para redefinir sua senha.',
-        });
+        toast({ title: 'Email enviado!', description: 'Verifique sua caixa de entrada.' });
         setForgotPasswordOpen(false);
         setForgotPasswordEmail('');
       }
     } catch (err) {
-      toast({
-        variant: 'destructive',
-        title: 'Erro',
-        description: 'Ocorreu um erro ao enviar o email.',
-      });
+      toast({ variant: 'destructive', title: 'Erro', description: 'Erro ao enviar o email.' });
     } finally {
       setForgotPasswordLoading(false);
     }
@@ -192,43 +150,43 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex">
-      {/* Left side - Branding */}
+      {/* Lado Esquerdo - Branding (Desktop) */}
       <div className="hidden lg:flex lg:w-1/2 gradient-primary p-12 flex-col justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-primary-foreground/20 flex items-center justify-center">
-            <Layers className="w-6 h-6 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="font-bold text-xl text-primary-foreground">PDD App</h1>
-            <p className="text-xs text-primary-foreground/70">Solicitações de Demandas</p>
-          </div>
+          {/* ALTERAÇÃO AQUI: Logo substituindo o ícone e textos PDD App */}
+          <img 
+            src="/placeholder.svg" 
+            alt="Logo da Empresa" 
+            className="h-14 w-auto object-contain" 
+          />
         </div>
 
         <div className="space-y-6">
           <h2 className="text-4xl font-bold text-primary-foreground leading-tight">
-            Gerencie suas demandas de forma centralizada
+            Central de Solicitações de Demandas
           </h2>
           <p className="text-lg text-primary-foreground/80">
-            Padronize o recebimento, acompanhe o ciclo de vida e mantenha histórico auditável de todas as solicitações.
+            Otimize processos, acompanhe fluxos em tempo real e garanta total rastreabilidade das suas demandas.
           </p>
         </div>
 
         <p className="text-sm text-primary-foreground/60">
-          © 2024 PDD App. Todos os direitos reservados.
+        
         </p>
       </div>
 
-      {/* Right side - Form */}
+      {/* Lado Direito - Formuário */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md space-y-8">
-          {/* Mobile logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-              <Layers className="w-6 h-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="font-bold text-xl text-foreground">PDD App</h1>
-            </div>
+          
+          {/* Mobile logo (Aparece apenas em telas pequenas) */}
+          <div className="lg:hidden flex items-center justify-center mb-8">
+            {/* ALTERAÇÃO AQUI: Logo para versão mobile */}
+            <img 
+              src="/placeholder.svg" 
+              alt="Logo da Empresa" 
+              className="h-12 w-auto object-contain" 
+            />
           </div>
 
           <div className="text-center lg:text-left">
@@ -257,9 +215,7 @@ export default function Auth() {
                     className="pl-10"
                   />
                 </div>
-                {errors.nome && (
-                  <p className="text-xs text-destructive">{errors.nome}</p>
-                )}
+                {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
               </div>
             )}
 
@@ -276,9 +232,7 @@ export default function Auth() {
                   className="pl-10"
                 />
               </div>
-              {errors.email && (
-                <p className="text-xs text-destructive">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
@@ -305,9 +259,7 @@ export default function Auth() {
                   className="pl-10"
                 />
               </div>
-              {errors.password && (
-                <p className="text-xs text-destructive">{errors.password}</p>
-              )}
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
             </div>
 
             {!isLogin && (
@@ -324,20 +276,12 @@ export default function Auth() {
                     className="pl-10"
                   />
                 </div>
-                {errors.confirmPassword && (
-                  <p className="text-xs text-destructive">{errors.confirmPassword}</p>
-                )}
+                {errors.confirmPassword && <p className="text-xs text-destructive">{errors.confirmPassword}</p>}
               </div>
             )}
 
-            <Button 
-              type="submit" 
-              className="w-full gap-2" 
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                'Carregando...'
-              ) : (
+            <Button type="submit" className="w-full gap-2" disabled={isLoading}>
+              {isLoading ? 'Carregando...' : (
                 <>
                   {isLogin ? 'Entrar' : 'Criar conta'}
                   <ArrowRight className="w-4 h-4" />
@@ -349,30 +293,23 @@ export default function Auth() {
           <div className="text-center">
             <button
               type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setErrors({});
-              }}
+              onClick={() => { setIsLogin(!isLogin); setErrors({}); }}
               className="text-sm text-primary hover:underline"
             >
-              {isLogin
-                ? 'Não tem conta? Criar agora'
-                : 'Já tem conta? Entrar'}
+              {isLogin ? 'Não tem conta? Criar agora' : 'Já tem conta? Entrar'}
             </button>
           </div>
         </div>
       </div>
 
-      {/* Forgot Password Dialog */}
       <Dialog open={forgotPasswordOpen} onOpenChange={setForgotPasswordOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5" />
-              Recuperar Senha
+              <KeyRound className="h-5 w-5" /> Recuperar Senha
             </DialogTitle>
             <DialogDescription>
-              Digite seu email e enviaremos um link para redefinir sua senha.
+              Digite seu email para redefinir sua senha.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -392,9 +329,7 @@ export default function Auth() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setForgotPasswordOpen(false)}>
-              Cancelar
-            </Button>
+            <Button variant="outline" onClick={() => setForgotPasswordOpen(false)}>Cancelar</Button>
             <Button onClick={handleForgotPassword} disabled={forgotPasswordLoading}>
               {forgotPasswordLoading ? 'Enviando...' : 'Enviar Link'}
             </Button>
